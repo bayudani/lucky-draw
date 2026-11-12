@@ -21,9 +21,9 @@ import {
 import {
   getPreviousWinnerNamesForSession,
   findNextDrawableSession,
+  normalizeName,
 } from "../domain/sessionRules";
-import { SESSION_COUNT, type LuckyDrawState } from "../domain/types";
-
+import { type LuckyDrawState } from "../domain/types";
 type ConfirmKind =
   | { type: "reset-session"; sessionId: number }
   | { type: "redraw"; sessionId: number }
@@ -41,7 +41,9 @@ function LuckyDrawApp() {
     spinningSessionId,
     pendingDraw,
     spin,
+    stopSpin,
     setParticipants,
+    setWinnerCount,
     resetSession,
     redrawSession,
     resetAll,
@@ -131,11 +133,13 @@ function LuckyDrawApp() {
         };
       }
       case "redraw": {
-        const previousWinner =
-          sessions.find((s) => s.id === confirmState.sessionId)?.winner?.name ?? "—";
+        const previousWinners =
+          sessions.find((s) => s.id === confirmState.sessionId)?.winners ?? [];
+        const previousWinnerText =
+          previousWinners.length > 0 ? previousWinners.map((w) => w.name).join(", ") : "—";
         return {
           title: `Undi Ulang Sesi ${confirmState.sessionId}?`,
-          description: `Pemenang sebelumnya (${previousWinner}) dan histori undian sesi ini akan dihapus, lalu sesi diundi ulang dengan peserta yang sama. Sesi lain dan pemenang lintas sesi tidak terpengaruh.`,
+          description: `Pemenang sebelumnya (${previousWinnerText}) dan histori undian sesi ini akan dihapus, lalu sesi diundi ulang dengan peserta yang sama. Sesi lain dan pemenang lintas sesi tidak terpengaruh.`,
           confirmLabel: "Ya, Undi Ulang",
           danger: true,
           onConfirm: () => {
@@ -151,8 +155,7 @@ function LuckyDrawApp() {
       case "reset-all":
         return {
           title: "Reset Seluruh Acara?",
-          description:
-            "Semua peserta, pemenang, dan histori di 10 sesi akan dihapus permanen. Pastikan sudah mengunduh backup JSON sebelum melanjutkan.",
+          description: `Semua peserta, pemenang, dan histori di ${sessions.length} sesi akan dihapus permanen. Pastikan sudah mengunduh backup JSON sebelum melanjutkan.`,
           confirmLabel: "Ya, Reset Semua",
           danger: true,
           onConfirm: () => {
@@ -199,7 +202,7 @@ function LuckyDrawApp() {
         <div className="bg-noise absolute inset-0 opacity-[0.045] mix-blend-overlay" />
       </div>
 
-      <div className="relative z-10 flex min-h-screen flex-col">
+      <div className="relative z-10 flex min-h-screen flex-col lg:h-screen lg:overflow-hidden">
       {loadStatus === "corrupt" && (
         <div className="flex flex-wrap items-center gap-3 border-b border-primary/60 bg-deep/60 px-6 py-3 text-sm">
           <TriangleAlert className="size-5 shrink-0 text-red-300" aria-hidden />
@@ -222,6 +225,7 @@ function LuckyDrawApp() {
 
       <AppHeader
         eventName={state.eventName}
+        sessionCount={state.settings.sessionCount}
         completedCount={completedCount}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenAudience={() => setAudienceMode(true)}
@@ -244,13 +248,27 @@ function LuckyDrawApp() {
         onSelect={(id) => setActiveSessionId(id)}
       />
 
-      <main className="grid min-h-0 flex-1 gap-4 px-4 pb-6 sm:px-6 lg:grid-cols-[1.8fr_1fr] max-lg:grid-rows-[auto_minmax(26rem,1fr)]">
+      <main className="grid min-h-0 flex-1 gap-4 px-4 pb-6 sm:px-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden max-lg:grid-rows-[auto_minmax(26rem,1fr)]">
         <ParticipantGrid
           session={session}
           previousWinnerNames={previousWinnerNames}
           globalUniqueWinners={state.settings.globalUniqueWinners}
           canEdit={session.status !== "completed" && !isSpinning}
           onOpenEditor={() => setEditorOpen(true)}
+          onRemoveAlreadyWon={() => {
+            const kept = session.participants.filter(
+              (p) => !previousWinnerNames.includes(normalizeName(p.name)),
+            );
+            const removed = session.participants.length - kept.length;
+            setParticipants(
+              session.id,
+              kept.map((p) => p.name),
+            );
+            notify(
+              `${removed} peserta yang sudah menang di sesi lain dihapus dari Sesi ${session.id}.`,
+              "success",
+            );
+          }}
         />
         <SpinPanel
           session={session}
@@ -261,6 +279,7 @@ function LuckyDrawApp() {
           showWinner={session.status === "completed"}
           hasNextSession={Boolean(nextDrawable)}
           onSpin={handleSpin}
+          onStopSpin={stopSpin}
           onRedraw={() => setConfirmState({ type: "redraw", sessionId: session.id })}
           onNextSession={() => {
             if (nextDrawable) setActiveSessionId(nextDrawable.id);
@@ -268,11 +287,12 @@ function LuckyDrawApp() {
           onOpenHistory={() => setHistoryOpen(true)}
           onOpenAudience={() => setAudienceMode(true)}
           onResetSession={() => setConfirmState({ type: "reset-session", sessionId: session.id })}
+          onSetWinnerCount={(winnerCount) => setWinnerCount(session.id, winnerCount)}
         />
       </main>
 
       <p className="px-6 pb-4 text-center text-[11px] text-muted/70 max-lg:hidden">
-        Total {SESSION_COUNT} sesi · Pemenang unik sepanjang acara · Data tersimpan otomatis
+        Total {sessions.length} sesi · Pemenang unik sepanjang acara · Data tersimpan otomatis
         di perangkat ini (LocalStorage)
       </p>
 
@@ -325,6 +345,7 @@ function LuckyDrawApp() {
             pendingDraw={pendingDraw}
             hasNextSession={Boolean(nextDrawable)}
             onSpin={handleSpin}
+            onStopSpin={stopSpin}
             onRedraw={() => setConfirmState({ type: "redraw", sessionId: session.id })}
             onNextSession={() => {
               if (nextDrawable) setActiveSessionId(nextDrawable.id);

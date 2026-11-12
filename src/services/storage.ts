@@ -1,15 +1,20 @@
 import {
   DEFAULT_SPIN_DURATION_MS,
   DEFAULT_SPIN_REVOLUTIONS,
+  DEFAULT_WINNER_COUNT,
+  MAX_SESSION_COUNT,
   MAX_SPIN_DURATION_MS,
   MAX_SPIN_REVOLUTIONS,
+  MAX_WINNER_COUNT,
+  MIN_SESSION_COUNT,
   MIN_SPIN_DURATION_MS,
   MIN_SPIN_REVOLUTIONS,
+  MIN_WINNER_COUNT,
   SCHEMA_VERSION,
-  SESSION_COUNT,
   type DrawHistory,
   type DrawSession,
   type LuckyDrawState,
+  type Participant,
   type SessionStatus,
 } from "../domain/types";
 import { computeSessionStatus } from "../domain/sessionRules";
@@ -49,6 +54,29 @@ function parseParticipants(value: unknown): { id: string; name: string }[] | nul
   return participants;
 }
 
+/**
+ * Parsing daftar pemenang. Mendukung schema baru (`winners: [...]`) dan
+ * backup lama (`winner: {..} | null`) — lama otomatis dimigrasi.
+ */
+function parseWinners(value: unknown, legacyWinner: unknown): Participant[] | null {
+  if (value !== undefined) {
+    if (!Array.isArray(value)) return null;
+    const winners: Participant[] = [];
+    for (const item of value) {
+      const winner = parseParticipant(item);
+      if (!winner) return null;
+      if (winners.some((w) => w.id === winner.id)) return null; // pemenang duplikat
+      winners.push(winner);
+    }
+    return winners;
+  }
+  // Backup lama: field tunggal `winner`.
+  if (legacyWinner === null) return [];
+  if (legacyWinner === undefined) return null;
+  const winner = parseParticipant(legacyWinner);
+  return winner ? [winner] : null;
+}
+
 function parseHistory(value: unknown, sessionId: number): DrawHistory[] | null {
   if (!Array.isArray(value)) return null;
   const history: DrawHistory[] = [];
@@ -58,14 +86,14 @@ function parseHistory(value: unknown, sessionId: number): DrawHistory[] | null {
     if (item.sessionId !== sessionId) return null;
     const participants = parseParticipants(item.participants);
     if (!participants) return null;
-    const winner = parseParticipant(item.winner);
-    if (!winner) return null;
+    const winners = parseWinners(item.winners, item.winner);
+    if (!winners || winners.length === 0) return null;
     if (!isIsoDateString(item.drawnAt)) return null;
     history.push({
       id: item.id,
       sessionId,
       participants,
-      winner,
+      winners,
       drawnAt: item.drawnAt,
     });
   }
@@ -77,14 +105,8 @@ function parseSession(value: unknown, expectedId: number): DrawSession | null {
   if (value.id !== expectedId) return null;
   const participants = parseParticipants(value.participants);
   if (!participants) return null;
-  let winner: { id: string; name: string } | null = null;
-  if (value.winner !== null) {
-    const parsedWinner = parseParticipant(value.winner);
-    if (!parsedWinner) return null;
-    winner = parsedWinner;
-  } else if (value.winner === undefined) {
-    return null;
-  }
+  const winners = parseWinners(value.winners, value.winner);
+  if (!winners) return null;
   const history = parseHistory(value.history, expectedId);
   if (!history) return null;
   if (
@@ -103,7 +125,21 @@ function parseSession(value: unknown, expectedId: number): DrawSession | null {
   } else {
     return null;
   }
-  return { id: expectedId, participants, winner, history, status, drawnAt };
+  // winnerCount opsional (backup lama) — default 1 bila tidak ada / tidak valid.
+  let winnerCount = DEFAULT_WINNER_COUNT;
+  if (value.winnerCount !== undefined) {
+    const raw = value.winnerCount;
+    if (
+      typeof raw !== "number" ||
+      !Number.isInteger(raw) ||
+      raw < MIN_WINNER_COUNT ||
+      raw > MAX_WINNER_COUNT
+    ) {
+      return null;
+    }
+    winnerCount = raw;
+  }
+  return { id: expectedId, participants, winners, history, status, drawnAt, winnerCount };
 }
 
 /**
@@ -115,16 +151,23 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
   if (!isRecord(raw)) return null;
   if (raw.schemaVersion !== SCHEMA_VERSION) return null;
   if (typeof raw.eventName !== "string") return null;
-  if (!Array.isArray(raw.sessions) || raw.sessions.length !== SESSION_COUNT) return null;
+  if (
+    !Array.isArray(raw.sessions) ||
+    raw.sessions.length < MIN_SESSION_COUNT ||
+    raw.sessions.length > MAX_SESSION_COUNT
+  ) {
+    return null;
+  }
+  const sessionCount = raw.sessions.length;
 
   const sessions: DrawSession[] = [];
-  for (let i = 0; i < SESSION_COUNT; i += 1) {
+  for (let i = 0; i < sessionCount; i += 1) {
     const session = parseSession(raw.sessions[i], i + 1);
     if (!session) return null;
     // Status selalu dihitung ulang dari data agar konsisten.
     sessions.push({
       ...session,
-      status: computeSessionStatus(session.participants.length, session.winner !== null),
+      status: computeSessionStatus(session.participants.length, session.winners.length > 0),
     });
   }
 
@@ -140,7 +183,7 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
   }
   if (typeof globalUniqueWinners !== "boolean") return null;
 
-  // Field pengaturan spin bersifat opsional agar backup lama tetap valid;
+  // Field pengaturan spin/sesi bersifat opsional agar backup lama tetap valid;
   // bila ada nilainya wajib berada dalam rentang wajar.
   let spinDurationMs = DEFAULT_SPIN_DURATION_MS;
   if (raw.settings.spinDurationMs !== undefined) {
@@ -168,6 +211,20 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
     }
     spinRevolutions = value;
   }
+  let sessionCountSetting = sessionCount;
+  if (raw.settings.sessionCount !== undefined) {
+    const value = raw.settings.sessionCount;
+    if (
+      typeof value !== "number" ||
+      !Number.isInteger(value) ||
+      value < MIN_SESSION_COUNT ||
+      value > MAX_SESSION_COUNT
+    ) {
+      return null;
+    }
+    // Konsistensi: jumlah sesi mengikuti array sesi yang ada.
+    sessionCountSetting = value === sessionCount ? value : sessionCount;
+  }
 
   if (!isIsoDateString(raw.updatedAt)) return null;
 
@@ -175,7 +232,13 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
     schemaVersion: SCHEMA_VERSION,
     eventName: raw.eventName,
     sessions,
-    settings: { maxParticipantsPerSession, globalUniqueWinners, spinDurationMs, spinRevolutions },
+    settings: {
+      maxParticipantsPerSession,
+      globalUniqueWinners,
+      sessionCount: sessionCountSetting,
+      spinDurationMs,
+      spinRevolutions,
+    },
     updatedAt: raw.updatedAt,
   };
 }

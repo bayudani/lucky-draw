@@ -16,7 +16,7 @@ export function getWinnerNames(
   const names: string[] = [];
   for (const session of state.sessions) {
     if (excludeSessionId !== undefined && session.id === excludeSessionId) continue;
-    if (session.winner) names.push(normalizeName(session.winner.name));
+    for (const winner of session.winners) names.push(normalizeName(winner.name));
   }
   return names;
 }

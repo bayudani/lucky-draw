@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { createInitialState } from "../domain/factory";
-import { drawWinnerIndex } from "../domain/drawWinner";
+import { createEmptySession, createEmptySessions, createInitialState } from "../domain/factory";
+import { drawDistinctWinnerIndices } from "../domain/drawWinner";
+import { buildDrumDisplay, DRUM_VISUAL_CAP } from "../domain/drumDisplay";
 import {
   findSession,
   getEligibleParticipants,
@@ -13,31 +14,28 @@ import type {
   Participant,
   Settings,
 } from "../domain/types";
-import { clearState, loadState, saveState, type LoadResult } from "../services/storage";
-
-// import type {
-//   DrawSession,
-//   LuckyDrawState,
-//   Participant,
-//   Settings,
-// } from "../domain/types";
 import {
+  MAX_SESSION_COUNT,
   MAX_SPIN_DURATION_MS,
   MAX_SPIN_REVOLUTIONS,
+  MAX_WINNER_COUNT,
+  MIN_SESSION_COUNT,
   MIN_SPIN_DURATION_MS,
   MIN_SPIN_REVOLUTIONS,
+  MIN_WINNER_COUNT,
 } from "../domain/types";
-// import { clearState, loadState, saveState, type LoadResult } from "../services/storage";
+import { clearState, loadState, saveState, type LoadResult } from "../services/storage";
 
 /**
- * Data undian yang sedang berjalan: dipakai animasi 3D untuk mendarat di pemenang.
- * `durationMs` & `revolutions` diambil dari pengaturan saat tombol ditekan.
+ * Data undian yang sedang berjalan: dipakai animasi 3D untuk mendarat di
+ * pemenang pertama. `durationMs` & `revolutions` diambil dari pengaturan
+ * saat tombol ditekan.
  */
 export interface PendingDraw {
   sessionId: number;
-  /** Nama-nama kandidat (hanya eligible), urutan tetap. */
+  /** Nama-nama yang tampil di drum (jendela visual, pemenang pertama wajib ada). */
   names: string[];
-  /** Indeks pemenang pada `names`. */
+  /** Indeks pemenang pertama pada `names`. */
   winnerIndex: number;
   durationMs: number;
   revolutions: number;
@@ -45,12 +43,13 @@ export interface PendingDraw {
 
 type Action =
   | { type: "SET_PARTICIPANTS"; sessionId: number; names: string[] }
-  | { type: "COMPLETE_DRAW"; sessionId: number; winnerId: string; drawnAt: string }
+  | { type: "COMPLETE_DRAW"; sessionId: number; winnerIds: string[]; drawnAt: string }
   | { type: "REDRAW_SESSION"; sessionId: number }
   | { type: "RESET_SESSION"; sessionId: number }
   | { type: "RESET_ALL" }
   | { type: "IMPORT_STATE"; state: LuckyDrawState }
-  | { type: "UPDATE_SETTINGS"; settings: Partial<Settings> };
+  | { type: "UPDATE_SETTINGS"; settings: Partial<Settings> }
+  | { type: "SET_WINNER_COUNT"; sessionId: number; winnerCount: number };
 
 function mapSession(
   state: LuckyDrawState,
@@ -105,16 +104,26 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
       if (!session || session.status === "completed" || session.participants.length === 0) {
         return state;
       }
-      const winner = session.participants.find((p) => p.id === action.winnerId);
-      if (!winner) return state;
-      // Verifikasi eligibility di business logic (bukan hanya UI).
+      // Tolak ID duplikat — satu orang tidak boleh menang dua kali di undian yang sama.
+      if (new Set(action.winnerIds).size !== action.winnerIds.length) return state;
+      const winners = action.winnerIds
+        .map((id) => session.participants.find((p) => p.id === id))
+        .filter((p): p is Participant => p !== undefined);
+      // Semua ID harus valid dan jumlahnya sesuai target sesi.
+      if (winners.length === 0 || winners.length !== action.winnerIds.length) return state;
+      const expected = Math.min(session.winnerCount, session.participants.length);
+      if (winners.length !== expected) return state;
+      // Verifikasi eligibility di business logic (bukan hanya UI) untuk SEMUA pemenang.
       const winnerNames = getWinnerNames(state, session.id);
-      if (state.settings.globalUniqueWinners && winnerNames.includes(winner.name.toLowerCase())) {
-        return state;
-      }
+      const violatesGlobalUnique = winners.some((w) =>
+        state.settings.globalUniqueWinners
+          ? winnerNames.includes(w.name.toLowerCase())
+          : false,
+      );
+      if (violatesGlobalUnique) return state;
       return mapSession(state, action.sessionId, (s) => ({
         ...s,
-        winner,
+        winners,
         status: "completed",
         drawnAt: action.drawnAt,
         history: [
@@ -123,7 +132,7 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
             id: makeHistoryId(),
             sessionId: s.id,
             participants: [...s.participants],
-            winner,
+            winners,
             drawnAt: action.drawnAt,
           },
         ],
@@ -131,14 +140,14 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
     }
 
     case "REDRAW_SESSION": {
-      // Batalkan hasil undian sesi ini: pemenang & histori sesi dihapus,
+      // Batalkan hasil undian sesi ini: para pemenang & histori sesi dihapus,
       // peserta dipertahankan, sesi kembali "ready" untuk diundi ulang.
       // Hanya berlaku pada sesi yang sudah selesai (aksi eksplisit, bukan spin biasa).
       const session = findSession(state, action.sessionId);
       if (!session || session.status !== "completed") return state;
       return mapSession(state, action.sessionId, (s) => ({
         ...s,
-        winner: null,
+        winners: [],
         drawnAt: null,
         history: [],
         status: computeSessionStatus(s.participants.length, false),
@@ -149,7 +158,7 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
       return mapSession(state, action.sessionId, (s) => ({
         ...s,
         participants: [],
-        winner: null,
+        winners: [],
         history: [],
         status: "empty",
         drawnAt: null,
@@ -157,7 +166,25 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
     }
 
     case "RESET_ALL": {
-      return { ...createInitialState(), settings: state.settings };
+      const base = createInitialState();
+      // Pertahankan pengaturan (termasuk jumlah sesi dinamis).
+      return {
+        ...base,
+        settings: state.settings,
+        sessions: createEmptySessions(state.settings.sessionCount),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case "SET_WINNER_COUNT": {
+      const session = findSession(state, action.sessionId);
+      if (!session) return state;
+      const clamped = Math.min(
+        MAX_WINNER_COUNT,
+        Math.max(MIN_WINNER_COUNT, Math.round(action.winnerCount)),
+      );
+      if (clamped === session.winnerCount) return state;
+      return mapSession(state, action.sessionId, (s) => ({ ...s, winnerCount: clamped }));
     }
 
     case "IMPORT_STATE":
@@ -165,10 +192,30 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
 
     case "UPDATE_SETTINGS": {
       const nextMax = action.settings.maxParticipantsPerSession;
+      const nextSessionCount = action.settings.sessionCount;
       const nextDuration = action.settings.spinDurationMs;
       const nextRevolutions = action.settings.spinRevolutions;
+
+      let sessions = state.sessions;
+      if (nextSessionCount !== undefined) {
+        const clampedCount = Math.min(
+          MAX_SESSION_COUNT,
+          Math.max(MIN_SESSION_COUNT, Math.round(nextSessionCount)),
+        );
+        if (clampedCount < sessions.length) {
+          // Memperkecil: sesi dari akhir dibuang (beserta datanya).
+          sessions = sessions.slice(0, clampedCount);
+        } else if (clampedCount > sessions.length) {
+          const extra = Array.from({ length: clampedCount - sessions.length }, (_, i) =>
+            createEmptySession(sessions.length + i + 1),
+          );
+          sessions = [...sessions, ...extra];
+        }
+      }
+
       return {
         ...state,
+        sessions,
         settings: {
           ...state.settings,
           ...action.settings,
@@ -176,6 +223,7 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
             nextMax !== undefined
               ? Math.min(1000, Math.max(1, Math.round(nextMax)))
               : state.settings.maxParticipantsPerSession,
+          sessionCount: sessions.length,
           spinDurationMs:
             nextDuration !== undefined
               ? Math.min(MAX_SPIN_DURATION_MS, Math.max(MIN_SPIN_DURATION_MS, Math.round(nextDuration)))
@@ -214,6 +262,8 @@ export function useLuckyDraw() {
   stateRef.current = state;
   const spinningRef = useRef(false);
   const timerRef = useRef<number | null>(null);
+  /** Hasil undian yang sudah dipilih (untuk tombol stop manual). */
+  const pendingWinnersRef = useRef<{ sessionId: number; winnerIds: string[] } | null>(null);
 
   // Autosave setiap perubahan state yang valid.
   useEffect(() => {
@@ -229,6 +279,10 @@ export function useLuckyDraw() {
 
   const setParticipants = useCallback((sessionId: number, names: string[]) => {
     dispatch({ type: "SET_PARTICIPANTS", sessionId, names });
+  }, []);
+
+  const setWinnerCount = useCallback((sessionId: number, winnerCount: number) => {
+    dispatch({ type: "SET_WINNER_COUNT", sessionId, winnerCount });
   }, []);
 
   const resetSession = useCallback((sessionId: number) => {
@@ -248,6 +302,14 @@ export function useLuckyDraw() {
   }, []);
 
   const updateSettings = useCallback((settings: Partial<Settings>) => {
+    // Jangan ubah jumlah sesi saat animasi berjalan — pendingDraw merujuk sesi
+    // yang bisa terbuang bila array sesi menyusut.
+    if (spinningRef.current && settings.sessionCount !== undefined) {
+      const { sessionCount: _ignored, ...rest } = settings;
+      if (Object.keys(rest).length === 0) return;
+      dispatch({ type: "UPDATE_SETTINGS", settings: rest });
+      return;
+    }
     dispatch({ type: "UPDATE_SETTINGS", settings });
   }, []);
 
@@ -257,9 +319,10 @@ export function useLuckyDraw() {
   }, [resetAll]);
 
   /**
-   * Jalankan pengundian. Pemenang dipilih SEKALI dengan Web Crypto di sini,
-   * lalu animasi hanya memvisualisasikan hasil. Selama animasi, spin
-   * terkunci (BR-09). Sesi selesai tidak dapat diundi ulang (BR-07).
+   * Jalankan pengundian. Para pemenang (sesuai `winnerCount` sesi) dipilih
+   * SEKALI dengan Web Crypto di sini, lalu animasi hanya memvisualisasikan
+   * hasil. Selama animasi, spin terkunci (BR-09). Sesi selesai tidak dapat
+   * diundi ulang (BR-07).
    */
   const spin = useCallback(
     (sessionId: number, onNoEligible: () => void): boolean => {
@@ -274,8 +337,9 @@ export function useLuckyDraw() {
         onNoEligible();
         return false;
       }
-      const winnerIndex = drawWinnerIndex(eligible.length);
-      const winner = eligible[winnerIndex];
+      const winnerCount = Math.min(session.winnerCount, eligible.length);
+      const winnerIndices = drawDistinctWinnerIndices(eligible.length, winnerCount);
+      const winners = winnerIndices.map((index) => eligible[index]);
 
       spinningRef.current = true;
       setIsSpinning(true);
@@ -288,10 +352,22 @@ export function useLuckyDraw() {
         MAX_SPIN_REVOLUTIONS,
         Math.max(MIN_SPIN_REVOLUTIONS, current.settings.spinRevolutions),
       );
+      // Jendela visual drum (bukan jumlah pemenang): pemenang pertama wajib mendarat.
+      const display = buildDrumDisplay(
+        eligible.map((participant) => participant.name),
+        winners[0].name,
+        DRUM_VISUAL_CAP,
+      );
+      // Simpan hasil undian agar bisa di-"stop" manual oleh panitia:
+      // tombol stop = hentikan animasi & langsung tetapkan pemenang.
+      pendingWinnersRef.current = {
+        sessionId,
+        winnerIds: winners.map((w) => w.id),
+      };
       setPendingDraw({
         sessionId,
-        names: eligible.map((participant) => participant.name),
-        winnerIndex,
+        names: display.names,
+        winnerIndex: display.winnerIndex,
         durationMs,
         revolutions,
       });
@@ -300,13 +376,14 @@ export function useLuckyDraw() {
         dispatch({
           type: "COMPLETE_DRAW",
           sessionId,
-          winnerId: winner.id,
+          winnerIds: winners.map((w) => w.id),
           drawnAt: new Date().toISOString(),
         });
         setIsSpinning(false);
         setSpinningSessionId(null);
         setPendingDraw(null);
         spinningRef.current = false;
+        pendingWinnersRef.current = null;
         timerRef.current = null;
       }, durationMs);
 
@@ -314,6 +391,33 @@ export function useLuckyDraw() {
     },
     [],
   );
+
+  /**
+   * Stop manual: hentikan animasi drum dan langsung umumkan pemenang.
+   * Pemenang sudah ditentukan sejak tombol spin ditekan (Web Crypto),
+   * jadi menghentikan lebih awal TIDAK mengubah hasil undian.
+   */
+  const stopSpin = useCallback(() => {
+    if (!spinningRef.current) return;
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const pending = pendingWinnersRef.current;
+    spinningRef.current = false;
+    setIsSpinning(false);
+    setSpinningSessionId(null);
+    setPendingDraw(null);
+    pendingWinnersRef.current = null;
+    if (pending) {
+      dispatch({
+        type: "COMPLETE_DRAW",
+        sessionId: pending.sessionId,
+        winnerIds: pending.winnerIds,
+        drawnAt: new Date().toISOString(),
+      });
+    }
+  }, []);
 
   const getSession = useCallback(
     (sessionId: number): DrawSession | undefined => findSession(state, sessionId),
@@ -330,7 +434,9 @@ export function useLuckyDraw() {
     spinningSessionId,
     pendingDraw,
     spin,
+    stopSpin,
     setParticipants,
+    setWinnerCount,
     resetSession,
     redrawSession,
     resetAll,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { LogOut, Projector, RotateCcw, Trophy, Users } from "lucide-react";
+import { LogOut, Projector, RotateCcw, Square, Trophy, Users } from "lucide-react";
 import type { DrawSession, LuckyDrawState } from "../../domain/types";
 import { getEligibleParticipants } from "../../domain/sessionRules";
 import type { PendingDraw } from "../../hooks/useLuckyDraw";
@@ -16,6 +16,7 @@ interface AudienceViewProps {
   pendingDraw: PendingDraw | null;
   hasNextSession: boolean;
   onSpin: () => void;
+  onStopSpin: () => void;
   onRedraw: () => void;
   onNextSession: () => void;
   onExit: () => void;
@@ -32,6 +33,7 @@ export function AudienceView({
   pendingDraw,
   hasNextSession,
   onSpin,
+  onStopSpin,
   onRedraw,
   onNextSession,
   onExit,
@@ -70,7 +72,12 @@ export function AudienceView({
   const isCompleted = session.status === "completed";
 
   const idleText = isCompleted
-    ? `Pemenang: ${session.winner?.name ?? "—"}`
+    ? `Pemenang: ${
+        session.winners.length > 0
+          ? session.winners.slice(0, 2).map((w) => w.name).join(", ") +
+            (session.winners.length > 2 ? ` +${session.winners.length - 2} lagi` : "")
+          : "—"
+      }`
     : session.status === "ready"
       ? "Semua siap? Saatnya menentukan pemenang!"
       : "Belum ada peserta di sesi ini";
@@ -101,8 +108,13 @@ export function AudienceView({
       {/* Bar atas: identitas + keluar */}
       <div className="relative z-30 flex items-center justify-between gap-2 px-4 py-3 sm:px-8 sm:py-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-red-300/40 bg-[linear-gradient(160deg,#f87171,#991b1b)] text-lg font-black text-white shadow-[inset_0_2px_0_rgba(255,255,255,0.4)]">
-            ★
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-red-300/40 bg-white p-1 shadow-[inset_0_2px_0_rgba(255,255,255,0.4)]">
+            <img
+              src="/img/LogoBenline.png"
+              alt="Logo Benline"
+              className="size-full object-contain"
+              draggable={false}
+            />
           </div>
           <div className="min-w-0">
             <p className="truncate bg-gradient-to-b from-white to-red-200 bg-clip-text text-lg font-black leading-tight text-transparent">
@@ -143,12 +155,25 @@ export function AudienceView({
         </div>
 
         {isThisSessionSpinning ? (
-          <div
-            className="flex items-center gap-3 text-2xl font-black uppercase tracking-wider text-red-200"
-            aria-live="polite"
-          >
-            <span className="size-3 animate-ping rounded-full bg-primary" aria-hidden />
-            Sedang Mengundi...
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="flex items-center gap-3 text-2xl font-black uppercase tracking-wider text-red-200"
+              aria-live="polite"
+            >
+              <span className="size-3 animate-ping rounded-full bg-primary" aria-hidden />
+              Sedang Mengundi...
+            </div>
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 3 }}
+              type="button"
+              onClick={onStopSpin}
+              className="flex items-center gap-2 rounded-xl border border-white/25 bg-gradient-to-b from-[#52525b] to-[#3f3f46] px-6 py-3 text-base font-black uppercase tracking-wider text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.35)] hover:brightness-110"
+              title="Hentikan animasi sekarang dan langsung tampilkan pemenang (hasil undian tidak berubah)"
+            >
+              <Square className="size-5 fill-current" aria-hidden />
+              Stop & Tampilkan Pemenang
+            </motion.button>
           </div>
         ) : isCompleted ? (
           <div className="flex flex-col items-center gap-3">
@@ -216,6 +241,7 @@ export function AudienceView({
       {/* Popup fullscreen pemenang — momen dramatis saat hasil ditentukan */}
       <WinnerTakeover
         session={session}
+        eventName={state.eventName}
         visible={isCompleted && !isSpinning && !takeoverDismissed}
         hasNextSession={hasNextSession}
         onNextSession={onNextSession}

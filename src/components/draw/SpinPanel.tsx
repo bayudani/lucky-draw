@@ -1,6 +1,11 @@
 import { motion } from "framer-motion";
-import { Projector, RotateCcw, Trophy, Users } from "lucide-react";
-import type { DrawSession, LuckyDrawState } from "../../domain/types";
+import { Projector, RotateCcw, Square, Trophy, TrophyIcon, Users } from "lucide-react";
+import {
+  MAX_WINNER_COUNT,
+  MIN_WINNER_COUNT,
+  type DrawSession,
+  type LuckyDrawState,
+} from "../../domain/types";
 import { getEligibleParticipants } from "../../domain/sessionRules";
 import type { PendingDraw } from "../../hooks/useLuckyDraw";
 import { STATUS_LABEL } from "../layout/SessionNavigation";
@@ -19,11 +24,13 @@ interface SpinPanelProps {
   showWinner: boolean;
   hasNextSession: boolean;
   onSpin: () => void;
+  onStopSpin: () => void;
   onRedraw: () => void;
   onNextSession: () => void;
   onOpenHistory: () => void;
   onOpenAudience: () => void;
   onResetSession: () => void;
+  onSetWinnerCount: (winnerCount: number) => void;
 }
 
 export function SpinPanel({
@@ -35,11 +42,13 @@ export function SpinPanel({
   showWinner,
   hasNextSession,
   onSpin,
+  onStopSpin,
   onRedraw,
   onNextSession,
   onOpenHistory,
   onOpenAudience,
   onResetSession,
+  onSetWinnerCount,
 }: SpinPanelProps) {
   const eligible = getEligibleParticipants(session, state);
   const drumNames =
@@ -59,7 +68,12 @@ export function SpinPanel({
   const isCompleted = session.status === "completed";
 
   const idleText = isCompleted
-    ? `Pemenang: ${session.winner?.name ?? "—"}`
+    ? `Pemenang: ${
+        session.winners.length > 0
+          ? session.winners.slice(0, 2).map((w) => w.name).join(", ") +
+            (session.winners.length > 2 ? ` +${session.winners.length - 2} lagi` : "")
+          : "—"
+      }`
     : session.status === "ready"
       ? "Semua siap? Saatnya menentukan pemenang!"
       : "Belum ada peserta di sesi ini";
@@ -74,15 +88,57 @@ export function SpinPanel({
           <h2 className="text-lg font-black text-ink">Pengundian Sesi {session.id}</h2>
           <p className="flex items-center gap-2 text-sm font-semibold text-muted">
             <Users className="size-4" aria-hidden />
-            {session.participants.length} peserta · {eligible.length} eligible
+            {session.participants.length} peserta · {session.winners.length} pemenang
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div
+            className="flex items-center gap-1 rounded-lg border border-line bg-background px-2 py-1"
+            title="Berapa orang yang menang/keluar namanya pada sesi ini (pemenang tetap diundi dari semua peserta)"
+          >
+            <TrophyIcon className="size-3.5 text-muted" aria-hidden />
+            <span className="px-1 text-[11px] font-bold uppercase tracking-wide text-muted">
+              Pemenang
+            </span>
+            <button
+              type="button"
+              onClick={() => onSetWinnerCount(session.winnerCount - 1)}
+              disabled={isThisSessionSpinning || session.winnerCount <= MIN_WINNER_COUNT}
+              className="flex size-6 items-center justify-center rounded-md border border-line text-sm font-black text-muted hover:text-ink disabled:opacity-30"
+              aria-label="Kurangi jumlah pemenang"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min={MIN_WINNER_COUNT}
+              max={MAX_WINNER_COUNT}
+              value={session.winnerCount}
+              disabled={isThisSessionSpinning}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (Number.isFinite(value) && value >= MIN_WINNER_COUNT) {
+                  onSetWinnerCount(Math.round(value));
+                }
+              }}
+              className="w-12 bg-transparent text-center text-sm font-bold text-ink outline-none focus:border-primary disabled:opacity-40"
+              aria-label="Jumlah pemenang sesi ini"
+            />
+            <button
+              type="button"
+              onClick={() => onSetWinnerCount(session.winnerCount + 1)}
+              disabled={isThisSessionSpinning || session.winnerCount >= MAX_WINNER_COUNT}
+              className="flex size-6 items-center justify-center rounded-md border border-line text-sm font-black text-muted hover:text-ink disabled:opacity-30"
+              aria-label="Tambah jumlah pemenang"
+            >
+              +
+            </button>
+          </div>
           <button
             type="button"
             onClick={onOpenAudience}
             title="Tampilan audiens (fullscreen untuk proyektor)"
-            className="flex items-center gap-1.5 rounded-lg border border-primary/50 bg-primary/15 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-primary/25"
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary/50 bg-primary/15 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-primary/25"
           >
             <Projector className="size-3.5" aria-hidden />
             Mode Audiens
@@ -129,12 +185,25 @@ export function SpinPanel({
         )}
 
         {isThisSessionSpinning && (
-          <div
-            className="flex items-center justify-center gap-3 rounded-2xl border border-primary/40 bg-deep/30 px-8 py-6 text-2xl font-black uppercase tracking-wider text-red-200"
-            aria-live="polite"
-          >
-            <span className="size-3 animate-ping rounded-full bg-primary" aria-hidden />
-            Sedang Mengundi...
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-primary/40 bg-deep/30 px-8 py-6">
+            <div
+              className="flex items-center gap-3 text-2xl font-black uppercase tracking-wider text-red-200"
+              aria-live="polite"
+            >
+              <span className="size-3 animate-ping rounded-full bg-primary" aria-hidden />
+              Sedang Mengundi...
+            </div>
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 3 }}
+              type="button"
+              onClick={onStopSpin}
+              className="flex items-center gap-2 rounded-xl border border-white/25 bg-gradient-to-b from-[#52525b] to-[#3f3f46] px-6 py-3 text-base font-black uppercase tracking-wider text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.35)] hover:brightness-110"
+              title="Hentikan animasi sekarang dan langsung tampilkan pemenang (hasil undian tidak berubah)"
+            >
+              <Square className="size-5 fill-current" aria-hidden />
+              Stop & Tampilkan Pemenang
+            </motion.button>
           </div>
         )}
 
@@ -145,15 +214,7 @@ export function SpinPanel({
           </p>
         )}
 
-        <WinnerReveal
-          session={session}
-          visible={showWinner && !isSpinning}
-          hasNextSession={hasNextSession}
-          onNextSession={onNextSession}
-          onOpenHistory={onOpenHistory}
-        />
-
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {isCompleted && (
             <motion.button
               whileHover={{ y: -2 }}
@@ -180,6 +241,14 @@ export function SpinPanel({
             Reset Sesi {session.id}
           </motion.button>
         </div>
+
+        <WinnerReveal
+          session={session}
+          visible={showWinner && !isSpinning}
+          hasNextSession={hasNextSession}
+          onNextSession={onNextSession}
+          onOpenHistory={onOpenHistory}
+        />
       </div>
     </section>
   );

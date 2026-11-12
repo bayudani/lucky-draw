@@ -1,7 +1,9 @@
-import { Gauge, Timer, Users } from "lucide-react";
+import { Gauge, List, Timer, Users } from "lucide-react";
 import {
+  MAX_SESSION_COUNT,
   MAX_SPIN_DURATION_MS,
   MAX_SPIN_REVOLUTIONS,
+  MIN_SESSION_COUNT,
   MIN_SPIN_DURATION_MS,
   MIN_SPIN_REVOLUTIONS,
   type Settings,
@@ -31,7 +33,7 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
             <Users className="size-5 text-muted" aria-hidden />
             <span>
               <span className="block text-sm font-bold text-ink">Maksimal peserta per sesi</span>
-              <span className="block text-xs text-muted">Default 30 (BR-03)</span>
+              <span className="block text-xs text-muted">Default 30 (1–1000)</span>
             </span>
           </span>
           <input
@@ -47,6 +49,32 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
             }}
             className={inputClass}
             aria-label="Maksimal peserta per sesi"
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
+          <span className="flex items-center gap-3">
+            <List className="size-5 text-muted" aria-hidden />
+            <span>
+              <span className="block text-sm font-bold text-ink">Jumlah sesi pengundian</span>
+              <span className="block text-xs text-muted">
+                Default 10 ({MIN_SESSION_COUNT}–{MAX_SESSION_COUNT})
+              </span>
+            </span>
+          </span>
+          <input
+            type="number"
+            min={MIN_SESSION_COUNT}
+            max={MAX_SESSION_COUNT}
+            value={settings.sessionCount}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              if (Number.isFinite(value) && value >= MIN_SESSION_COUNT) {
+                onChange({ sessionCount: Math.round(value) });
+              }
+            }}
+            className={inputClass}
+            aria-label="Jumlah sesi pengundian"
           />
         </label>
 
@@ -111,6 +139,11 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
           <p className="mt-1 text-red-100/80">
             Peserta yang sudah pernah menang tidak dapat terpilih lagi di sesi mana pun,
             sesuai requirement terbaru.
+          </p>
+          <p className="mt-3 border-t border-primary/30 pt-2 text-xs text-muted">
+            Catatan: mengurangi jumlah sesi akan menghapus sesi dari urutan terakhir
+            beserta peserta, pemenang, dan historinya. Backup JSON disarankan sebelum
+            mengubah.
           </p>
         </div>
       </div>

@@ -56,9 +56,9 @@ export function WinnerHistory({ open, sessions, onClose }: WinnerHistoryProps) {
                 <span className="text-sm font-black text-ink">Sesi {session.id}</span>
                 <StatusBadge status={session.status} />
                 <span className="ml-auto text-right">
-                  {session.winner ? (
-                    <span className="block text-sm font-bold text-ink">
-                      🏆 {session.winner.name}
+                  {session.winners.length > 0 ? (
+                    <span className="block max-w-72 truncate text-sm font-bold text-ink">
+                      🏆 {session.winners.map((w) => w.name).join(", ")}
                     </span>
                   ) : (
                     <span className="block text-sm text-muted">Belum ada pemenang</span>
@@ -96,7 +96,9 @@ export function WinnerHistory({ open, sessions, onClose }: WinnerHistoryProps) {
                           </div>
                           <p className="mt-1.5 text-sm font-bold text-ink">
                             Pemenang:{" "}
-                            <span className="text-red-300">{entry.winner.name}</span>
+                            <span className="text-red-300">
+                              {entry.winners.map((w) => w.name).join(", ")}
+                            </span>
                           </p>
                           <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
                             <Users className="size-3.5" aria-hidden />

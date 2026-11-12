@@ -13,6 +13,7 @@ import { FullscreenButton } from "../common/FullscreenButton";
 
 interface AppHeaderProps {
   eventName: string;
+  sessionCount: number;
   completedCount: number;
   onOpenSettings: () => void;
   onOpenAudience: () => void;
@@ -25,6 +26,7 @@ interface AppHeaderProps {
 
 export function AppHeader({
   eventName,
+  sessionCount,
   completedCount,
   onOpenSettings,
   onOpenAudience,
@@ -42,20 +44,25 @@ export function AppHeader({
         <motion.div
           whileHover={{ rotateY: 14, rotateX: -8 }}
           style={{ transformPerspective: 400 }}
-          className="flex size-11 items-center justify-center rounded-xl border border-red-300/40 bg-[linear-gradient(160deg,#f87171_0%,#dc2626_55%,#7f1d1d_100%)] text-xl font-black text-white shadow-[inset_0_2px_0_rgba(255,255,255,0.45),inset_0_-4px_8px_rgba(0,0,0,0.4)]"
+          className="flex size-11 items-center justify-center rounded-xl border border-red-300/40 bg-white p-1.5 shadow-[inset_0_2px_0_rgba(255,255,255,0.45),inset_0_-4px_8px_rgba(0,0,0,0.4)]"
         >
-          ★
+          <img
+            src="/img/LogoBenline.png"
+            alt="Logo Benline"
+            className="size-full object-contain"
+            draggable={false}
+          />
         </motion.div>
         <div>
           <h1 className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-xl font-black leading-tight tracking-tight text-transparent">
             {eventName}
           </h1>
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-muted">
-            10 Sesi Pengundian
+            {sessionCount} Sesi Pengundian
           </p>
         </div>
         <span className="rounded-full border border-primary/50 bg-gradient-to-b from-[#3d1414] to-[#251010] px-3 py-1 text-xs font-bold text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-          {completedCount}/10 sesi selesai
+          {completedCount}/{sessionCount} sesi selesai
         </span>
       </div>
 

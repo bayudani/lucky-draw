@@ -44,6 +44,20 @@ export function ParticipantInputDialog({
     return parsed.names.filter((name) => previousWinnerNames.includes(normalizeName(name)));
   }, [parsed.names, previousWinnerNames, globalUniqueWinners]);
 
+  /** Buang baris yang sudah menang di sesi lain langsung dari textarea. */
+  const removeAlreadyWon = () => {
+    const wonSet = new Set(alreadyWonInBatch.map(normalizeName));
+    const kept = text
+      .split("\n")
+      .filter((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return true; // baris kosong dibiarkan (nanti diabaikan parser)
+        return !wonSet.has(normalizeName(trimmed));
+      })
+      .join("\n");
+    setText(kept);
+  };
+
   const handleSave = () => {
     if (hasBlockingIssues) return;
     onSave(parsed.names);
@@ -105,9 +119,18 @@ export function ParticipantInputDialog({
           <div className="rounded-xl border border-amber-500/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">
             <p className="font-bold">Sudah pernah menang di sesi lain:</p>
             <p className="mt-1 text-amber-200/90">
-              {alreadyWonInBatch.join(", ")} — namanya tetap bisa disimpan dan akan
-              ditandai &quot;Sudah Menang&quot;, tetapi tidak bisa terpilih saat pengundian.
+              {alreadyWonInBatch.join(", ")} — tetap bisa disimpan dan ditandai
+              &quot;Sudah Menang&quot;, tetapi tidak bisa terpilih saat pengundian.
             </p>
+            <button
+              type="button"
+              onClick={removeAlreadyWon}
+              className="mt-2 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-500/25"
+              title={`Buang ${alreadyWonInBatch.length} nama yang sudah menang dari daftar di atas`}
+            >
+              <CircleAlert className="size-3.5" aria-hidden />
+              Hapus {alreadyWonInBatch.length} nama ini dari daftar
+            </button>
           </div>
         )}
 

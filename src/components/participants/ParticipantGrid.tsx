@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Pencil, Users } from "lucide-react";
+import { CircleAlert, Pencil, Users } from "lucide-react";
 import type { DrawSession } from "../../domain/types";
+import { normalizeName } from "../../domain/sessionRules";
 
 interface ParticipantGridProps {
   session: DrawSession;
@@ -9,6 +10,8 @@ interface ParticipantGridProps {
   globalUniqueWinners: boolean;
   canEdit: boolean;
   onOpenEditor: () => void;
+  /** Hapus semua peserta yang sudah menang di sesi lain dari sesi ini. */
+  onRemoveAlreadyWon: () => void;
 }
 
 export function ParticipantGrid({
@@ -17,8 +20,15 @@ export function ParticipantGrid({
   globalUniqueWinners,
   canEdit,
   onOpenEditor,
+  onRemoveAlreadyWon,
 }: ParticipantGridProps) {
   const isEmpty = session.participants.length === 0;
+
+  const alreadyWonCount = globalUniqueWinners
+    ? session.participants.filter((p) =>
+        previousWinnerNames.includes(normalizeName(p.name)),
+      ).length
+    : 0;
 
   return (
     <section
@@ -33,16 +43,31 @@ export function ParticipantGrid({
           </p>
         </div>
         {canEdit && (
-          <motion.button
-            whileHover={{ y: -2 }}
-            whileTap={{ y: 2 }}
-            type="button"
-            onClick={onOpenEditor}
-            className="relative flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#3f3f46] to-[#27272a] px-4 py-2 text-sm font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-3px_0_rgba(0,0,0,0.35)]"
-          >
-            <Pencil className="size-4" aria-hidden />
-            {isEmpty ? "Tambah Peserta" : "Edit Peserta"}
-          </motion.button>
+          <div className="flex flex-wrap items-center gap-2">
+            {alreadyWonCount > 0 && (
+              <motion.button
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 2 }}
+                type="button"
+                onClick={onRemoveAlreadyWon}
+                className="relative flex items-center gap-2 rounded-xl border border-amber-500/40 bg-gradient-to-b from-[#3f3a2a] to-[#2a2620] px-4 py-2 text-sm font-bold text-amber-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),inset_0_-3px_0_rgba(0,0,0,0.35)]"
+                title={`Hapus ${alreadyWonCount} peserta yang sudah menang di sesi lain`}
+              >
+                <CircleAlert className="size-4" aria-hidden />
+                Hapus {alreadyWonCount} Sudah Menang
+              </motion.button>
+            )}
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 2 }}
+              type="button"
+              onClick={onOpenEditor}
+              className="relative flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#3f3f46] to-[#27272a] px-4 py-2 text-sm font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-3px_0_rgba(0,0,0,0.35)]"
+            >
+              <Pencil className="size-4" aria-hidden />
+              {isEmpty ? "Tambah Peserta" : "Edit Peserta"}
+            </motion.button>
+          </div>
         )}
       </div>
 
@@ -66,9 +91,10 @@ export function ParticipantGrid({
         ) : (
           <ul className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
             {session.participants.map((participant, index) => {
+              const key = normalizeName(participant.name);
+              const wonHere = session.winners.some((w) => normalizeName(w.name) === key);
               const alreadyWon =
-                globalUniqueWinners &&
-                previousWinnerNames.includes(participant.name.toLowerCase());
+                !wonHere && globalUniqueWinners && previousWinnerNames.includes(key);
               return (
                 <motion.li
                   key={participant.id}
@@ -87,6 +113,11 @@ export function ParticipantGrid({
                   <span className="truncate" title={participant.name}>
                     {participant.name}
                   </span>
+                  {wonHere && (
+                    <span className="ml-auto shrink-0 rounded-md border border-amber-300/60 bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-200">
+                      🏆 Pemenang
+                    </span>
+                  )}
                   {alreadyWon && (
                     <span className="ml-auto shrink-0 rounded-md border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-300">
                       Sudah Menang

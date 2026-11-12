@@ -25,7 +25,7 @@ describe("buildCsv", () => {
   it("berisi header dan satu baris per sesi", () => {
     const state = createInitialState();
     const p: Participant = { id: "w1", name: "Siti Rahma" };
-    state.sessions[0].winner = p;
+    state.sessions[0].winners = [p];
     state.sessions[0].drawnAt = "2026-11-12T10:00:00.000Z";
     state.sessions[0].participants = [p, { id: "p2", name: "Budi" }];
 
@@ -33,16 +33,27 @@ describe("buildCsv", () => {
     const lines = csv.split("\r\n");
     expect(lines).toHaveLength(11);
     expect(lines[0]).toBe(
-      "session_number,session_name,winner_name,drawn_at,participant_count",
+      "session_number,session_name,winner_names,winner_count,drawn_at,participant_count",
     );
-    expect(lines[1]).toBe("1,Sesi 1,Siti Rahma,2026-11-12T10:00:00.000Z,2");
-    expect(lines[2]).toBe("2,Sesi 2,,,0");
+    expect(lines[1]).toBe("1,Sesi 1,Siti Rahma,1,2026-11-12T10:00:00.000Z,2");
+    expect(lines[2]).toBe("2,Sesi 2,,0,,0");
   });
 
   it("melakukan escaping untuk pemenang dengan koma", () => {
     const state = createInitialState();
-    state.sessions[3].winner = { id: "w", name: "Santoso, Budi" };
+    state.sessions[3].winners = [{ id: "w", name: "Santoso, Budi" }];
     const csv = buildCsv(state);
-    expect(csv).toContain('4,Sesi 4,"Santoso, Budi",,0');
+    expect(csv).toContain('4,Sesi 4,"Santoso, Budi",1,,0');
+  });
+
+  it("menggabungkan banyak pemenang dengan titik koma", () => {
+    const state = createInitialState();
+    state.sessions[0].winners = [
+      { id: "w1", name: "Budi" },
+      { id: "w2", name: "Siti" },
+      { id: "w3", name: "Ani" },
+    ];
+    const csv = buildCsv(state);
+    expect(csv).toContain("1,Sesi 1,Budi; Siti; Ani,3,,0");
   });
 });

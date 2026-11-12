@@ -54,7 +54,8 @@ export function buildCsv(state: LuckyDrawState): string {
   const header = [
     "session_number",
     "session_name",
-    "winner_name",
+    "winner_names",
+    "winner_count",
     "drawn_at",
     "participant_count",
   ];
@@ -64,7 +65,8 @@ export function buildCsv(state: LuckyDrawState): string {
       [
         String(session.id),
         `Sesi ${session.id}`,
-        session.winner ? session.winner.name : "",
+        session.winners.length > 0 ? session.winners.map((w) => w.name).join("; ") : "",
+        String(session.winners.length),
         session.drawnAt ?? "",
         String(session.participants.length),
       ].map(escapeCsvField),

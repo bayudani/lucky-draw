@@ -6,6 +6,7 @@ import { ConfettiBurst } from "./WinnerReveal";
 
 interface WinnerTakeoverProps {
   session: DrawSession;
+  eventName: string;
   visible: boolean;
   hasNextSession: boolean;
   onNextSession: () => void;
@@ -21,13 +22,15 @@ const CONFETTI_COLORS = ["#DC2626", "#F87171", "#FBBF24", "#FDE68A", "#FAFAFA", 
  */
 export function WinnerTakeover({
   session,
+  eventName,
   visible,
   hasNextSession,
   onNextSession,
   onRedraw,
   onDismiss,
 }: WinnerTakeoverProps) {
-  const winner = session.winner;
+  const winners = session.winners;
+  const firstWinner = winners[0];
 
   // Hujan confetti: posisi/durasi acak-tetap per render takeover.
   const rain = useMemo(
@@ -46,7 +49,7 @@ export function WinnerTakeover({
 
   return (
     <AnimatePresence>
-      {visible && winner && (
+      {visible && firstWinner && (
         <motion.div
           key={`takeover-${session.id}`}
           initial={{ opacity: 0 }}
@@ -54,7 +57,7 @@ export function WinnerTakeover({
           exit={{ opacity: 0, transition: { duration: 0.25 } }}
           className="fixed inset-0 z-[85] flex flex-col items-center justify-center overflow-hidden bg-[#120406]"
           role="dialog"
-          aria-label={`Pemenang Sesi ${session.id}: ${winner.name}`}
+          aria-label={`Pemenang Sesi ${session.id}: ${firstWinner.name}`}
         >
           {/* Latar: glow merah + sorotan berputar + noise */}
           <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -72,6 +75,21 @@ export function WinnerTakeover({
               transition={{ duration: 46, ease: "linear", repeat: Infinity }}
             />
             <div className="bg-noise absolute inset-0 opacity-[0.05] mix-blend-overlay" />
+          </div>
+
+          {/* Logo Benline — pojok kiri atas */}
+          <div className="pointer-events-none absolute left-4 top-4 z-20 flex items-center gap-3 sm:left-8 sm:top-6">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-red-300/40 bg-white p-1 shadow-[inset_0_2px_0_rgba(255,255,255,0.4)]">
+              <img
+                src="/img/LogoBenline.png"
+                alt="Logo Benline"
+                className="size-full object-contain"
+                draggable={false}
+              />
+            </div>
+            <p className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-lg font-black leading-tight text-transparent">
+              {eventName}
+            </p>
           </div>
 
           {/* Gelombang ledakan saat muncul */}
@@ -131,21 +149,55 @@ export function WinnerTakeover({
               className="mb-4 flex items-center gap-2 rounded-full border border-amber-300/50 bg-amber-400/15 px-5 py-2 text-xs font-black uppercase tracking-[0.35em] text-amber-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
             >
               <PartyPopper className="size-4" aria-hidden />
-              Selamat kepada Pemenang!
+              {winners.length > 1
+                ? `Selamat kepada ${winners.length} Pemenang!`
+                : "Selamat kepada Pemenang!"}
             </motion.div>
 
             <p className="mb-2 text-sm font-bold uppercase tracking-[0.4em] text-red-200/80">
               Pemenang Sesi {session.id}
             </p>
 
-            <motion.h1
-              animate={{ scale: [1, 1.04, 1] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-5xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-7xl xl:text-8xl"
-              style={{ textShadow: "0 0 60px rgba(220,38,38,0.35)" }}
-            >
-              {winner.name}
-            </motion.h1>
+            {winners.length === 1 ? (
+              <motion.h1
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-5xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-7xl xl:text-8xl"
+                style={{ textShadow: "0 0 60px rgba(220,38,38,0.35)" }}
+              >
+                {firstWinner.name}
+              </motion.h1>
+            ) : (
+              <>
+                <motion.h1
+                  animate={{ scale: [1, 1.03, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-4xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-6xl xl:text-7xl"
+                  style={{ textShadow: "0 0 60px rgba(220,38,38,0.35)" }}
+                >
+                  {firstWinner.name}
+                </motion.h1>
+                <p className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-amber-200/80">
+                  Pemenang Utama Sesi {session.id}
+                </p>
+                <ul className="mt-4 grid max-h-[26vh] w-full max-w-3xl grid-cols-2 gap-2 overflow-y-auto px-2 sm:grid-cols-3">
+                  {winners.slice(1).map((winner, index) => (
+                    <motion.li
+                      key={winner.id}
+                      initial={{ opacity: 0, scale: 0.5, x: 24 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      transition={{ delay: 0.5 + index * 0.08, type: "spring", stiffness: 240, damping: 20 }}
+                      className="flex items-center gap-2 rounded-lg border border-red-400/25 bg-black/30 px-3 py-1.5"
+                    >
+                      <span className="shrink-0 rounded-md bg-red-500/30 px-1.5 py-0.5 text-[11px] font-black text-red-200">
+                        {index + 2}
+                      </span>
+                      <span className="truncate text-sm font-bold text-ink">{winner.name}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </>
+            )}
 
             <ConfettiBurst />
           </motion.div>

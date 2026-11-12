@@ -96,7 +96,7 @@ export function WinnerReveal({
 
   return (
     <AnimatePresence>
-      {visible && session.winner && (
+      {visible && session.winners.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -114,7 +114,7 @@ export function WinnerReveal({
               exit={{ rotateX: -40, opacity: 0 }}
               transition={{ type: "spring", stiffness: 150, damping: 17 }}
               className={`relative overflow-hidden rounded-2xl border border-red-400/40 bg-[linear-gradient(160deg,#7f1d1d_0%,#991b1b_35%,#27272a_100%)] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-18px_40px_rgba(0,0,0,0.45),0_24px_60px_-18px_rgba(220,38,38,0.5)] ${
-                stage ? "w-full max-w-4xl px-10 py-12" : "px-6 py-6"
+                stage ? "w-full max-w-4xl px-10 py-12" : "px-5 py-5"
               }`}
             >
               {/* kilau strip melintas */}
@@ -133,7 +133,9 @@ export function WinnerReveal({
                   }`}
                 >
                   <PartyPopper className={stage ? "size-6" : "size-4"} aria-hidden />
-                  SELAMAT KEPADA PEMENANG!
+                  {session.winners.length > 1
+                    ? `SELAMAT KEPADA ${session.winners.length} PEMENANG!`
+                    : "SELAMAT KEPADA PEMENANG!"}
                 </p>
                 <p
                   className={`mt-1 font-bold uppercase tracking-[0.25em] text-muted ${
@@ -142,15 +144,41 @@ export function WinnerReveal({
                 >
                   Pemenang Sesi {session.id}
                 </p>
-                <h3
-                  className={`mt-3 break-words font-black leading-tight ${
-                    stage ? "text-6xl xl:text-7xl" : "text-4xl xl:text-5xl"
-                  }`}
-                >
-                  <span className="bg-gradient-to-b from-white via-red-50 to-red-300 bg-clip-text text-transparent drop-shadow-[0_2px_18px_rgba(220,38,38,0.45)]">
-                    {session.winner.name}
-                  </span>
-                </h3>
+
+                {session.winners.length === 1 ? (
+                  <h3
+                    className={`mt-3 break-words font-black leading-tight ${
+                      stage ? "text-6xl xl:text-7xl" : "text-3xl xl:text-4xl"
+                    }`}
+                  >
+                    <span className="bg-gradient-to-b from-white via-red-50 to-red-300 bg-clip-text text-transparent drop-shadow-[0_2px_18px_rgba(220,38,38,0.45)]">
+                      {session.winners[0].name}
+                    </span>
+                  </h3>
+                ) : (
+                  <ul className="mx-auto mt-4 grid max-h-64 w-full grid-cols-2 gap-2 overflow-y-auto text-left sm:grid-cols-3">
+                    {session.winners.map((winner, index) => (
+                      <motion.li
+                        key={winner.id}
+                        initial={{ opacity: 0, scale: 0.6, y: 12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ delay: 0.15 + index * 0.06, type: "spring", stiffness: 220, damping: 18 }}
+                        className="flex items-center gap-2 rounded-lg border border-red-400/25 bg-black/25 px-3 py-2"
+                      >
+                        <span
+                          className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-black ${
+                            index === 0
+                              ? "bg-amber-400/90 text-black"
+                              : "bg-red-500/30 text-red-200"
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
+                        <span className="truncate text-sm font-bold text-ink">{winner.name}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                )}
                 {session.drawnAt && (
                   <p className={`mt-2 font-semibold text-muted ${stage ? "text-sm" : "text-xs"}`}>
                     Diundi pada {new Date(session.drawnAt).toLocaleString("id-ID")}

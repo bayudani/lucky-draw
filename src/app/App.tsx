@@ -9,6 +9,7 @@ import { SpinPanel } from "../components/draw/SpinPanel";
 import { AudienceView } from "../components/draw/AudienceView";
 import { WinnerHistory } from "../components/history/WinnerHistory";
 import { ConfirmDialog } from "../components/common/ConfirmDialog";
+import { GuideModal } from "../components/common/GuideModal";
 import { SettingsModal } from "../components/common/SettingsModal";
 import { useLuckyDraw } from "../hooks/useLuckyDraw";
 import { playWinSound, setSoundEnabled, startSpinSound, stopSpinSound } from "../services/sound";
@@ -59,6 +60,7 @@ function LuckyDrawApp() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [audienceMode, setAudienceMode] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmKind>(null);
   const [showPortraitTip, setShowPortraitTip] = useState(true);
@@ -158,7 +160,7 @@ function LuckyDrawApp() {
         const previousWinners =
           sessions.find((s) => s.id === confirmState.sessionId)?.winners ?? [];
         const previousWinnerText =
-          previousWinners.length > 0 ? previousWinners.map((w) => w.name).join(", ") : "—";
+          previousWinners.length > 0 ? previousWinners.map((w) => w.name).join(", ") : "tidak ada";
         return {
           title: `Undi Ulang Sesi ${confirmState.sessionId}?`,
           description: `Pemenang sebelumnya (${previousWinnerText}) dan histori undian sesi ini akan dihapus, lalu sesi diundi ulang dengan peserta yang sama. Sesi lain dan pemenang lintas sesi tidak terpengaruh.`,
@@ -251,6 +253,7 @@ function LuckyDrawApp() {
         completedCount={completedCount}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenAudience={() => setAudienceMode(true)}
+        onOpenGuide={() => setGuideOpen(true)}
         onExportJson={() => {
           exportJsonBackup(state);
           notify("Backup JSON diunduh.", "success");
@@ -359,6 +362,8 @@ function LuckyDrawApp() {
         onSetSessionName={setSessionName}
         onClose={() => setSettingsOpen(false)}
       />
+
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       <AnimatePresence>
         {audienceMode && (

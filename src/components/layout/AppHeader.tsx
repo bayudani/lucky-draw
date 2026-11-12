@@ -1,10 +1,12 @@
-import { useRef } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
+  BookOpen,
   Download,
   FileJson,
   FileSpreadsheet,
   History,
+  Menu,
   Projector,
   RotateCcw,
   Settings2,
@@ -17,6 +19,7 @@ interface AppHeaderProps {
   completedCount: number;
   onOpenSettings: () => void;
   onOpenAudience: () => void;
+  onOpenGuide: () => void;
   onExportJson: () => void;
   onImportJson: (file: File) => void;
   onExportCsv: () => void;
@@ -30,6 +33,7 @@ export function AppHeader({
   completedCount,
   onOpenSettings,
   onOpenAudience,
+  onOpenGuide,
   onExportJson,
   onImportJson,
   onExportCsv,
@@ -37,6 +41,32 @@ export function AppHeader({
   onResetAll,
 }: AppHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Tutup menu saat klik di luar / tekan ESC.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointer = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointer);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  const run = (action: () => void) => () => {
+    setMenuOpen(false);
+    action();
+  };
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-gradient-to-b from-[#232327] to-[#1c1c1f] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:px-6">
@@ -66,7 +96,7 @@ export function AppHeader({
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onOpenAudience}
@@ -74,37 +104,78 @@ export function AppHeader({
           className="flex items-center gap-2 rounded-xl border border-red-300/40 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-3 py-2 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:brightness-110"
         >
           <Projector className="size-4" aria-hidden />
-          <span className="hidden md:inline">Mode Audiens</span>
+          <span className="hidden sm:inline">Mode Audiens</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onOpenHistory}
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
-        >
-          <History className="size-4" aria-hidden />
-          <span className="hidden md:inline">Rekap &amp; Histori</span>
-        </button>
+        <div className="hidden sm:block">
+          <FullscreenButton />
+        </div>
 
-        <button
-          type="button"
-          onClick={onExportJson}
-          title="Unduh backup JSON"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
-        >
-          <FileJson className="size-4" aria-hidden />
-          <span className="hidden md:inline">Backup</span>
-        </button>
+        {/* Menu: semua aksi sekunder dikelompokkan di sini */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          >
+            <Menu className="size-4" aria-hidden />
+            <span>Menu</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          title="Impor backup JSON"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
-        >
-          <Download className="size-4" aria-hidden />
-          <span className="hidden md:inline">Restore</span>
-        </button>
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.14 }}
+                role="menu"
+                aria-label="Menu utama"
+                className="absolute right-0 top-full z-[70] mt-2 w-72 origin-top-right overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl"
+              >
+                <div className="px-3 py-2">
+                  <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.25em] text-muted">
+                    Bantuan &amp; Pengaturan
+                  </p>
+                  <MenuItem icon={BookOpen} label="Panduan Penggunaan" onClick={run(onOpenGuide)} />
+                  <MenuItem icon={Settings2} label="Pengaturan" onClick={run(onOpenSettings)} />
+                </div>
+
+                <div className="border-t border-line px-3 py-2">
+                  <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.25em] text-muted">
+                    Data &amp; Rekap
+                  </p>
+                  <MenuItem icon={History} label="Rekap &amp; Histori" onClick={run(onOpenHistory)} />
+                  <MenuItem icon={FileJson} label="Backup (simpan data)" onClick={run(onExportJson)} />
+                  <MenuItem
+                    icon={Download}
+                    label="Restore (pulihkan data)"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      fileInputRef.current?.click();
+                    }}
+                  />
+                  <MenuItem icon={FileSpreadsheet} label="Rekap CSV (Excel)" onClick={run(onExportCsv)} />
+                </div>
+
+                <div className="border-t border-red-900/50 bg-red-950/20 px-3 py-2">
+                  <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.25em] text-red-300/80">
+                    Bahaya
+                  </p>
+                  <MenuItem
+                    icon={RotateCcw}
+                    label="Reset Seluruh Acara"
+                    onClick={run(onResetAll)}
+                    danger
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -116,41 +187,35 @@ export function AppHeader({
             event.target.value = "";
           }}
         />
-
-        <button
-          type="button"
-          onClick={onExportCsv}
-          title="Ekspor rekap CSV"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
-        >
-          <FileSpreadsheet className="size-4" aria-hidden />
-          <span className="hidden md:inline">CSV</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          title="Pengaturan acara"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
-        >
-          <Settings2 className="size-4" aria-hidden />
-          <span className="hidden md:inline">Pengaturan</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onResetAll}
-          title="Reset seluruh acara"
-          className="flex items-center gap-2 rounded-xl border border-red-900/60 bg-gradient-to-b from-[#321414] to-[#201010] px-3 py-2 text-sm font-semibold text-red-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-3px_0_rgba(0,0,0,0.35)] hover:text-red-200"
-        >
-          <RotateCcw className="size-4" aria-hidden />
-          <span className="hidden md:inline">Reset Acara</span>
-        </button>
-
-        <div className="hidden sm:block">
-          <FullscreenButton />
-        </div>
       </div>
     </header>
+  );
+}
+
+function MenuItem({
+  icon: Icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: typeof BookOpen;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm font-semibold transition-colors ${
+        danger
+          ? "text-red-300 hover:bg-red-900/25 hover:text-red-200"
+          : "text-ink hover:bg-elevated"
+      }`}
+    >
+      <Icon className={`size-4 shrink-0 ${danger ? "text-red-400" : "text-muted"}`} aria-hidden />
+      <span>{label}</span>
+    </button>
   );
 }

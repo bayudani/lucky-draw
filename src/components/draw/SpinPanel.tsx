@@ -64,7 +64,14 @@ export function SpinPanel({
       ? pendingDraw.durationMs
       : state.settings.spinDurationMs;
 
-  const canSpin = !isSpinning && session.status === "ready" && eligible.length > 0;
+  const canSpin =
+    !isSpinning &&
+    session.status === "ready" &&
+    eligible.length > 0 &&
+    session.winnerCount <= eligible.length;
+  // Batas pemenang: tidak boleh melebihi nama yang tersedia (peserta belum menang).
+  const maxWinnerCount =
+    eligible.length > 0 ? Math.min(MAX_WINNER_COUNT, eligible.length) : MAX_WINNER_COUNT;
   const isCompleted = session.status === "completed";
 
   const idleText = isCompleted
@@ -119,13 +126,13 @@ export function SpinPanel({
             <input
               type="number"
               min={MIN_WINNER_COUNT}
-              max={MAX_WINNER_COUNT}
+              max={maxWinnerCount}
               value={session.winnerCount}
               disabled={isThisSessionSpinning}
               onChange={(event) => {
                 const value = Number(event.target.value);
                 if (Number.isFinite(value) && value >= MIN_WINNER_COUNT) {
-                  onSetWinnerCount(Math.round(value));
+                  onSetWinnerCount(Math.min(Math.round(value), maxWinnerCount));
                 }
               }}
               className="w-12 bg-transparent text-center text-sm font-bold text-ink outline-none focus:border-primary disabled:opacity-40"
@@ -134,13 +141,19 @@ export function SpinPanel({
             <button
               type="button"
               onClick={() => onSetWinnerCount(session.winnerCount + 1)}
-              disabled={isThisSessionSpinning || session.winnerCount >= MAX_WINNER_COUNT}
+              disabled={isThisSessionSpinning || session.winnerCount >= maxWinnerCount}
               className="flex size-6 items-center justify-center rounded-md border border-line text-sm font-black text-muted hover:text-ink disabled:opacity-30"
               aria-label="Tambah jumlah pemenang"
             >
               +
             </button>
           </div>
+          {eligible.length > 0 && session.winnerCount > eligible.length && (
+            <p className="w-full text-right text-[11px] font-bold text-red-300">
+              Jumlah pemenang ({session.winnerCount}) melebihi nama tersedia ({eligible.length}) —
+              tambah peserta atau kurangi jumlah pemenang
+            </p>
+          )}
           <button
             type="button"
             onClick={onOpenAudience}
@@ -184,9 +197,11 @@ export function SpinPanel({
                 ? "Sesi tanpa peserta tidak dapat diundi"
                 : eligible.length === 0
                   ? "Semua peserta sudah pernah menang"
-                  : canSpin
-                    ? "Mulai pengundian"
-                    : "Menunggu…"
+                  : session.winnerCount > eligible.length
+                    ? "Jumlah pemenang melebihi jumlah nama yang tersedia"
+                    : canSpin
+                      ? "Mulai pengundian"
+                      : "Menunggu…"
             }
           />
         )}

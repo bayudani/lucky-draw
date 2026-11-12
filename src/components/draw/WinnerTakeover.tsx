@@ -56,7 +56,7 @@ export function WinnerTakeover({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.25 } }}
-          className="fixed inset-0 z-[85] flex flex-col items-center justify-center overflow-hidden bg-[#120406]"
+          className="fixed inset-0 z-[85] flex flex-col overflow-hidden bg-[#120406]"
           role="dialog"
           aria-label={`Pemenang Sesi ${session.id}: ${firstWinner.name}`}
         >
@@ -141,7 +141,7 @@ export function WinnerTakeover({
             animate={{ scale: 1, rotateX: 0, opacity: 1, filter: "blur(0px)" }}
             transition={{ type: "spring", stiffness: 110, damping: 15, delay: 0.15 }}
             style={{ transformPerspective: 1200 }}
-            className="relative z-10 flex flex-col items-center px-5 text-center"
+            className="relative z-10 flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 text-center"
           >
             <motion.div
               initial={{ scale: 0, rotate: -20 }}
@@ -165,14 +165,14 @@ export function WinnerTakeover({
               <motion.h1
                 animate={{ scale: [1, 1.04, 1] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-5xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-7xl xl:text-8xl"
+                className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-6xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-8xl xl:text-9xl"
                 style={{ textShadow: "0 0 60px rgba(220,38,38,0.35)" }}
               >
                 {firstWinner.name}
               </motion.h1>
             ) : (
               <>
-                {/* Multi pemenang: nama sesi/hadiah BESAR, semua pemenang ukuran sama */}
+                {/* Multi pemenang: nama sesi/hadiah terbesar, semua pemenang ukuran sama */}
                 <motion.h1
                   animate={{ scale: [1, 1.03, 1] }}
                   transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
@@ -181,19 +181,19 @@ export function WinnerTakeover({
                 >
                   {getSessionDisplayName(session)}
                 </motion.h1>
-                <ul className="mt-4 grid max-h-[26vh] w-full max-w-3xl grid-cols-2 gap-2 overflow-y-auto px-2 sm:grid-cols-3">
+                <ul className="mt-5 grid max-h-[30vh] w-full max-w-4xl grid-cols-2 gap-2.5 overflow-y-auto px-2 sm:grid-cols-3">
                   {winners.map((winner, index) => (
                     <motion.li
                       key={winner.id}
                       initial={{ opacity: 0, scale: 0.5, x: 24 }}
                       animate={{ opacity: 1, scale: 1, x: 0 }}
                       transition={{ delay: 0.5 + index * 0.08, type: "spring", stiffness: 240, damping: 20 }}
-                      className="flex items-center gap-2 rounded-lg border border-red-400/25 bg-black/30 px-3 py-1.5"
+                      className="flex items-center gap-2 rounded-lg border border-red-400/25 bg-black/30 px-3 py-2.5"
                     >
-                      <span className="shrink-0 rounded-md bg-red-500/30 px-1.5 py-0.5 text-[11px] font-black text-red-200">
+                      <span className="shrink-0 rounded-md bg-red-500/30 px-2 py-0.5 text-sm font-black text-red-200">
                         {index + 1}
                       </span>
-                      <span className="truncate text-sm font-bold text-ink">{winner.name}</span>
+                      <span className="truncate text-2xl font-bold text-ink sm:text-3xl">{winner.name}</span>
                     </motion.li>
                   ))}
                 </ul>
@@ -208,18 +208,18 @@ export function WinnerTakeover({
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
-            className="relative z-10 mt-10 flex flex-wrap items-center justify-center gap-3 px-5"
+            className="relative z-10 mt-auto flex flex-wrap items-center justify-center gap-2 px-5 pb-4"
           >
             {hasNextSession && (
               <motion.button
-                whileHover={{ y: -3 }}
-                whileTap={{ y: 3 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 2 }}
                 type="button"
                 onClick={onNextSession}
-                className="flex items-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-[#ef4444] to-[#991b1b] px-8 py-4 text-base font-black uppercase tracking-wider text-white shadow-[inset_0_2px_0_rgba(255,255,255,0.35),inset_0_-5px_0_rgba(0,0,0,0.35)] hover:brightness-110"
+                className="flex items-center gap-1.5 rounded-lg border border-amber-300/40 bg-gradient-to-b from-[#ef4444] to-[#991b1b] px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-2px_0_rgba(0,0,0,0.35)] hover:brightness-110 sm:text-sm"
               >
                 Lanjut ke Sesi Berikutnya
-                <ArrowRight className="size-5" aria-hidden />
+                <ArrowRight className="size-4" aria-hidden />
               </motion.button>
             )}
             <motion.button
@@ -227,16 +227,16 @@ export function WinnerTakeover({
               whileTap={{ y: 2 }}
               type="button"
               onClick={onRedraw}
-              className="flex items-center gap-2 rounded-xl border border-red-300/40 bg-gradient-to-b from-[#333338] to-[#232326] px-5 py-4 text-sm font-bold text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-white"
+              className="flex items-center gap-1.5 rounded-lg border border-red-300/40 bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-xs font-bold text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-2px_0_rgba(0,0,0,0.3)] hover:text-white sm:text-sm"
               title="Undi ulang sesi ini (pemenang sebelumnya dibatalkan)"
             >
-              <Undo2 className="size-4" aria-hidden />
+              <Undo2 className="size-3.5" aria-hidden />
               Spin Ulang
             </motion.button>
             <button
               type="button"
               onClick={onDismiss}
-              className="rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted/70 underline-offset-4 hover:text-muted hover:underline"
+              className="rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-muted/70 underline-offset-4 hover:text-muted hover:underline"
             >
               Kembali ke panggung
             </button>

@@ -1,7 +1,7 @@
 /**
  * Efek suara sintesis Web Audio — TANPA file asset, jadi aman offline
  * (PWA precache tetap self-contained). Semua suara dibangkitkan on-the-fly:
- * - spin: whoosh naik + gemuruh rendah + tick-tick seperti mesin undian
+ * - spin: tick-tick berkala seperti mesin undian
  * - menang: fanfare "ta-da" naik (C5-E5-G5-C6)
  */
 
@@ -9,7 +9,6 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let enabled = true;
 let tickTimer: number | null = null;
-let rumble: { osc: OscillatorNode; gain: GainNode } | null = null;
 
 function ensureContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -67,23 +66,10 @@ function tick(): void {
   tone(2300, 0, 0.035, "square", 0.1);
 }
 
-/** Mulai suara spin: whoosh naik + gemuruh + tick berkala. */
+/** Mulai suara spin: tick-tick berkala seperti mesin undian (tanpa gemuruh/buzz). */
 export function startSpinSound(): void {
   if (!enabled) return;
-  const c = ensureContext();
-  if (!c || !master) return;
-  // whoosh naik (sapu frekuensi)
-  tone(110, 0, 1.1, "sawtooth", 0.16, 520);
-  // gemuruh rendah terus-menerus selama spin
-  const osc = c.createOscillator();
-  const gain = c.createGain();
-  osc.type = "sawtooth";
-  osc.frequency.value = 52;
-  gain.gain.value = 0.055;
-  osc.connect(gain);
-  gain.connect(master);
-  osc.start();
-  rumble = { osc, gain };
+  ensureContext();
   // tick-tick tiap ~150ms seperti bola undian
   tickTimer = window.setInterval(tick, 150);
 }
@@ -93,17 +79,6 @@ export function stopSpinSound(): void {
   if (tickTimer !== null) {
     window.clearInterval(tickTimer);
     tickTimer = null;
-  }
-  if (rumble) {
-    const c = ensureContext();
-    if (c) {
-      const { osc, gain } = rumble;
-      gain.gain.cancelScheduledValues(c.currentTime);
-      gain.gain.setValueAtTime(gain.gain.value, c.currentTime);
-      gain.gain.linearRampToValueAtTime(0.0001, c.currentTime + 0.25);
-      osc.stop(c.currentTime + 0.35);
-    }
-    rumble = null;
   }
 }
 

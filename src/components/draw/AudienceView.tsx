@@ -67,7 +67,11 @@ export function AudienceView({
       ? pendingDraw.durationMs
       : state.settings.spinDurationMs;
 
-  const canSpin = !isSpinning && session.status === "ready" && eligible.length > 0;
+  const canSpin =
+    !isSpinning &&
+    session.status === "ready" &&
+    eligible.length > 0 &&
+    session.winnerCount <= eligible.length;
   const isThisSessionSpinning = pendingDraw?.sessionId === session.id && isSpinning;
   const isCompleted = session.status === "completed";
 
@@ -87,9 +91,11 @@ export function AudienceView({
       ? "Sesi tanpa peserta tidak dapat diundi"
       : eligible.length === 0
         ? "Semua peserta sudah pernah menang"
-        : canSpin
-          ? "Mulai pengundian"
-          : "Menunggu…";
+        : session.winnerCount > eligible.length
+          ? "Jumlah pemenang melebihi jumlah nama yang tersedia"
+          : canSpin
+            ? "Mulai pengundian"
+            : "Menunggu…";
 
   return (
     <motion.div

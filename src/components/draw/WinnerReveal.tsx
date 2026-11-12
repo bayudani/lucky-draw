@@ -141,7 +141,7 @@ export function WinnerReveal({
                 {session.winners.length > 1 ? (
                   <h3
                     className={`mt-2 break-words bg-gradient-to-b from-white via-red-50 to-red-300 bg-clip-text font-black leading-tight text-transparent drop-shadow-[0_2px_18px_rgba(220,38,38,0.45)] ${
-                      stage ? "text-5xl xl:text-6xl" : "text-3xl xl:text-4xl"
+                      stage ? "text-4xl xl:text-5xl" : "text-3xl xl:text-4xl"
                     }`}
                   >
                     {getSessionDisplayName(session)}
@@ -159,7 +159,7 @@ export function WinnerReveal({
                 {session.winners.length === 1 ? (
                   <h3
                     className={`mt-3 break-words font-black leading-tight ${
-                      stage ? "text-6xl xl:text-7xl" : "text-3xl xl:text-4xl"
+                      stage ? "text-7xl xl:text-8xl" : "text-3xl xl:text-4xl"
                     }`}
                   >
                     <span className="bg-gradient-to-b from-white via-red-50 to-red-300 bg-clip-text text-transparent drop-shadow-[0_2px_18px_rgba(220,38,38,0.45)]">
@@ -177,7 +177,7 @@ export function WinnerReveal({
                         className="flex items-center gap-2 rounded-lg border border-red-400/25 bg-black/25 px-3 py-2"
                       >
                         <span
-                          className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-black ${
+                          className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-black ${
                             index === 0
                               ? "bg-amber-400/90 text-black"
                               : "bg-red-500/30 text-red-200"
@@ -185,7 +185,7 @@ export function WinnerReveal({
                         >
                           {index + 1}
                         </span>
-                        <span className="truncate text-sm font-bold text-ink">{winner.name}</span>
+                        <span className="truncate text-2xl font-bold text-ink sm:text-3xl">{winner.name}</span>
                       </motion.li>
                     ))}
                   </ul>
@@ -202,7 +202,7 @@ export function WinnerReveal({
                       whileTap={{ y: 3 }}
                       type="button"
                       onClick={onNextSession}
-                      className="relative rounded-xl border border-red-300/30 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-6 py-3 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.3)]"
+                      className="relative rounded-lg border border-red-300/30 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-4 py-2 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-2px_0_rgba(0,0,0,0.3)] sm:text-sm"
                     >
                       Lanjut ke Sesi Berikutnya
                     </motion.button>
@@ -212,7 +212,7 @@ export function WinnerReveal({
                     whileTap={{ y: 3 }}
                     type="button"
                     onClick={onOpenHistory}
-                    className="relative rounded-xl border border-line bg-gradient-to-b from-[#3f3f46] to-[#27272a] px-6 py-3 text-sm font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-3px_0_rgba(0,0,0,0.35)]"
+                    className="relative rounded-lg border border-line bg-gradient-to-b from-[#3f3f46] to-[#27272a] px-4 py-2 text-xs font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_0_rgba(0,0,0,0.35)] sm:text-sm"
                   >
                     Lihat Rekap
                   </motion.button>

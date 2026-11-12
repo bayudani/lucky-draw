@@ -3,6 +3,7 @@ import { createInitialState } from "./factory";
 import {
   findNextDrawableSession,
   getEligibleParticipants,
+  getSessionDisplayName,
   getWinnerNames,
   isEligible,
   normalizeName,
@@ -16,6 +17,7 @@ function participant(id: string, name: string): Participant {
 function makeSession(partial: Partial<DrawSession>): DrawSession {
   return {
     id: 1,
+    name: "",
     participants: [],
     winners: [],
     history: [],
@@ -29,6 +31,18 @@ function makeSession(partial: Partial<DrawSession>): DrawSession {
 describe("normalizeName", () => {
   it("trim + lowercase", () => {
     expect(normalizeName("  Budi Santoso ")).toBe("budi santoso");
+  });
+});
+
+describe("getSessionDisplayName", () => {
+  it("nama kustom bila diisi", () => {
+    expect(getSessionDisplayName({ id: 2, name: "KULKAS" })).toBe("KULKAS");
+    expect(getSessionDisplayName({ id: 2, name: "  TV 50\"  " })).toBe('TV 50"');
+  });
+
+  it("fallback 'Sesi {id}' bila kosong", () => {
+    expect(getSessionDisplayName({ id: 3, name: "" })).toBe("Sesi 3");
+    expect(getSessionDisplayName({ id: 3, name: "   " })).toBe("Sesi 3");
   });
 });
 

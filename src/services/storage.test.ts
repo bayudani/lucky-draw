@@ -26,6 +26,7 @@ describe("validateLuckyDrawState", () => {
     state.sessions = createInitialState().sessions.concat(
       Array.from({ length: 21 }, (_, i) => ({
         id: 11 + i,
+        name: "",
         participants: [],
         winners: [],
         history: [],
@@ -149,6 +150,35 @@ describe("validateLuckyDrawState", () => {
     const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
     (raw.settings as Record<string, unknown>).autoCarryOverParticipants = "yes";
     expect(validateLuckyDrawState(raw)).toBeNull();
+  });
+
+  it("nama sesi opsional — default kosong, string diterima", () => {
+    const state = createInitialState();
+    state.sessions[0].name = "KULKAS";
+    const result = validateLuckyDrawState(JSON.parse(JSON.stringify(state)));
+    expect(result?.sessions[0].name).toBe("KULKAS");
+  });
+
+  it("nama sesi dipotong ke 40 karakter", () => {
+    const state = createInitialState();
+    state.sessions[0].name = "y".repeat(60);
+    const result = validateLuckyDrawState(JSON.parse(JSON.stringify(state)));
+    expect(result?.sessions[0].name.length).toBe(40);
+  });
+
+  it("menolak nama sesi bukan string", () => {
+    const state = createInitialState();
+    state.sessions[0].name = 123 as never;
+    expect(validateLuckyDrawState(JSON.parse(JSON.stringify(state)))).toBeNull();
+  });
+
+  it("backup lama tanpa field name tetap valid", () => {
+    const state = createInitialState();
+    const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
+    delete (raw.sessions as Record<string, unknown>[])[0].name;
+    const result = validateLuckyDrawState(raw);
+    expect(result).not.toBeNull();
+    expect(result?.sessions[0].name).toBe("");
   });
 
   it("menolak settings tidak valid", () => {

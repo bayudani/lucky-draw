@@ -1,11 +1,13 @@
-import { ArrowRightLeft, Gauge, List, Timer, Users } from "lucide-react";
+import { ArrowRightLeft, Gauge, Gift, List, Timer, Users } from "lucide-react";
 import {
   MAX_SESSION_COUNT,
+  MAX_SESSION_NAME_LENGTH,
   MAX_SPIN_DURATION_MS,
   MAX_SPIN_REVOLUTIONS,
   MIN_SESSION_COUNT,
   MIN_SPIN_DURATION_MS,
   MIN_SPIN_REVOLUTIONS,
+  type DrawSession,
   type Settings,
 } from "../../domain/types";
 import { Modal } from "./Modal";
@@ -13,14 +15,23 @@ import { Modal } from "./Modal";
 interface SettingsModalProps {
   open: boolean;
   settings: Settings;
+  sessions: DrawSession[];
   onChange: (settings: Partial<Settings>) => void;
+  onSetSessionName: (sessionId: number, name: string) => void;
   onClose: () => void;
 }
 
 const inputClass =
   "w-24 rounded-lg border border-line bg-background px-2 py-1.5 text-center text-sm font-bold text-ink outline-none focus:border-primary";
 
-export function SettingsModal({ open, settings, onChange, onClose }: SettingsModalProps) {
+export function SettingsModal({
+  open,
+  settings,
+  sessions,
+  onChange,
+  onSetSessionName,
+  onClose,
+}: SettingsModalProps) {
   return (
     <Modal open={open} title="Pengaturan Acara" onClose={onClose}>
       <div className="flex flex-col gap-5">
@@ -77,6 +88,38 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
             aria-label="Jumlah sesi pengundian"
           />
         </label>
+
+        <div className="rounded-xl border border-line bg-background px-4 py-3">
+          <p className="flex items-center gap-2 text-sm font-bold text-ink">
+            <Gift className="size-5 text-muted" aria-hidden />
+            Nama sesi / hadiah
+          </p>
+          <p className="mt-0.5 text-xs text-muted">
+            Nama tampil besar di mode audiens &amp; kartu pemenang. Contoh: KULKAS, TV 50&quot;, Mesin
+            Cuci. Kosongkan untuk &quot;Sesi 1&quot;.
+          </p>
+          <div className="mt-2 grid max-h-56 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+            {sessions.map((session) => (
+              <label
+                key={session.id}
+                className="flex items-center gap-2 rounded-lg border border-line/70 bg-background px-2 py-1.5"
+              >
+                <span className="w-14 shrink-0 text-xs font-bold uppercase text-muted">
+                  Sesi {session.id}
+                </span>
+                <input
+                  type="text"
+                  value={session.name}
+                  maxLength={MAX_SESSION_NAME_LENGTH}
+                  onChange={(event) => onSetSessionName(session.id, event.target.value)}
+                  placeholder={`Sesi ${session.id}`}
+                  className="w-full rounded-md border border-line bg-background px-2 py-1 text-sm font-semibold text-ink outline-none placeholder:text-muted/50 focus:border-primary"
+                  aria-label={`Nama sesi ${session.id}`}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
 
         <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
           <span className="flex items-center gap-3">

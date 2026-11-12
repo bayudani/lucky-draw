@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, PartyPopper, Undo2 } from "lucide-react";
+import { getSessionDisplayName } from "../../domain/sessionRules";
 import type { DrawSession } from "../../domain/types";
 import { ConfettiBurst } from "./WinnerReveal";
 
@@ -154,9 +155,11 @@ export function WinnerTakeover({
                 : "Selamat kepada Pemenang!"}
             </motion.div>
 
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.4em] text-red-200/80">
-              Pemenang Sesi {session.id}
-            </p>
+            {winners.length === 1 && (
+              <p className="mb-3 break-words bg-gradient-to-b from-amber-100 to-amber-400 bg-clip-text text-2xl font-black uppercase leading-tight tracking-[0.18em] text-transparent drop-shadow-[0_2px_14px_rgba(245,158,11,0.35)] sm:text-3xl">
+                Pemenang {getSessionDisplayName(session)}
+              </p>
+            )}
 
             {winners.length === 1 ? (
               <motion.h1
@@ -169,19 +172,17 @@ export function WinnerTakeover({
               </motion.h1>
             ) : (
               <>
+                {/* Multi pemenang: nama sesi/hadiah BESAR, semua pemenang ukuran sama */}
                 <motion.h1
                   animate={{ scale: [1, 1.03, 1] }}
                   transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                  className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-4xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-6xl xl:text-7xl"
+                  className="max-w-[92vw] break-words bg-gradient-to-b from-white via-amber-100 to-amber-400 bg-clip-text text-5xl font-black leading-[1.05] text-transparent drop-shadow-[0_6px_24px_rgba(220,38,38,0.55)] sm:text-7xl xl:text-8xl"
                   style={{ textShadow: "0 0 60px rgba(220,38,38,0.35)" }}
                 >
-                  {firstWinner.name}
+                  {getSessionDisplayName(session)}
                 </motion.h1>
-                <p className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-amber-200/80">
-                  Pemenang Utama Sesi {session.id}
-                </p>
                 <ul className="mt-4 grid max-h-[26vh] w-full max-w-3xl grid-cols-2 gap-2 overflow-y-auto px-2 sm:grid-cols-3">
-                  {winners.slice(1).map((winner, index) => (
+                  {winners.map((winner, index) => (
                     <motion.li
                       key={winner.id}
                       initial={{ opacity: 0, scale: 0.5, x: 24 }}
@@ -190,7 +191,7 @@ export function WinnerTakeover({
                       className="flex items-center gap-2 rounded-lg border border-red-400/25 bg-black/30 px-3 py-1.5"
                     >
                       <span className="shrink-0 rounded-md bg-red-500/30 px-1.5 py-0.5 text-[11px] font-black text-red-200">
-                        {index + 2}
+                        {index + 1}
                       </span>
                       <span className="truncate text-sm font-bold text-ink">{winner.name}</span>
                     </motion.li>

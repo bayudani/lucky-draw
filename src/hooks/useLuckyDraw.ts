@@ -17,6 +17,7 @@ import type {
 } from "../domain/types";
 import {
   MAX_SESSION_COUNT,
+  MAX_SESSION_NAME_LENGTH,
   MAX_SPIN_DURATION_MS,
   MAX_SPIN_REVOLUTIONS,
   MAX_WINNER_COUNT,
@@ -50,7 +51,8 @@ type Action =
   | { type: "RESET_ALL" }
   | { type: "IMPORT_STATE"; state: LuckyDrawState }
   | { type: "UPDATE_SETTINGS"; settings: Partial<Settings> }
-  | { type: "SET_WINNER_COUNT"; sessionId: number; winnerCount: number };
+  | { type: "SET_WINNER_COUNT"; sessionId: number; winnerCount: number }
+  | { type: "SET_SESSION_NAME"; sessionId: number; name: string };
 
 function mapSession(
   state: LuckyDrawState,
@@ -211,6 +213,14 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
       return mapSession(state, action.sessionId, (s) => ({ ...s, winnerCount: clamped }));
     }
 
+    case "SET_SESSION_NAME": {
+      const session = findSession(state, action.sessionId);
+      if (!session) return state;
+      const name = action.name.trim().slice(0, MAX_SESSION_NAME_LENGTH);
+      if (name === session.name) return state;
+      return mapSession(state, action.sessionId, (s) => ({ ...s, name }));
+    }
+
     case "IMPORT_STATE":
       return { ...action.state, updatedAt: new Date().toISOString() };
 
@@ -307,6 +317,10 @@ export function useLuckyDraw() {
 
   const setWinnerCount = useCallback((sessionId: number, winnerCount: number) => {
     dispatch({ type: "SET_WINNER_COUNT", sessionId, winnerCount });
+  }, []);
+
+  const setSessionName = useCallback((sessionId: number, name: string) => {
+    dispatch({ type: "SET_SESSION_NAME", sessionId, name });
   }, []);
 
   const resetSession = useCallback((sessionId: number) => {
@@ -461,6 +475,7 @@ export function useLuckyDraw() {
     stopSpin,
     setParticipants,
     setWinnerCount,
+    setSessionName,
     resetSession,
     redrawSession,
     resetAll,

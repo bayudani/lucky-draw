@@ -5,6 +5,7 @@ import { DEFAULT_WINNER_COUNT, SESSION_COUNT } from "./types";
 export function createEmptySession(id: number, winnerCount = DEFAULT_WINNER_COUNT): DrawSession {
   return {
     id,
+    name: "",
     participants: [],
     winners: [],
     history: [],

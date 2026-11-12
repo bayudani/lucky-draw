@@ -232,6 +232,40 @@ describe("reducer — SET_WINNER_COUNT", () => {
   });
 });
 
+describe("reducer — SET_SESSION_NAME", () => {
+  it("menyimpan nama sesi (hadiah) dan trim spasi", () => {
+    let state = createInitialState();
+    state = reducer(state, { type: "SET_SESSION_NAME", sessionId: 1, name: "  KULKAS  " });
+    expect(state.sessions[0].name).toBe("KULKAS");
+  });
+
+  it("memotong nama lebih dari 40 karakter", () => {
+    let state = createInitialState();
+    state = reducer(state, { type: "SET_SESSION_NAME", sessionId: 1, name: "x".repeat(60) });
+    expect(state.sessions[0].name.length).toBe(40);
+  });
+
+  it("nama kosong = reset ke default", () => {
+    let state = createInitialState();
+    state = reducer(state, { type: "SET_SESSION_NAME", sessionId: 1, name: "KULKAS" });
+    state = reducer(state, { type: "SET_SESSION_NAME", sessionId: 1, name: "   " });
+    expect(state.sessions[0].name).toBe("");
+  });
+
+  it("sesi lain tidak berubah", () => {
+    let state = createInitialState();
+    state = reducer(state, { type: "SET_SESSION_NAME", sessionId: 1, name: "KULKAS" });
+    expect(state.sessions[1].name).toBe("");
+  });
+
+  it("menolak sesi yang tidak ada", () => {
+    let state = createInitialState();
+    const before = state;
+    state = reducer(state, { type: "SET_SESSION_NAME", sessionId: 99, name: "KULKAS" });
+    expect(state).toBe(before);
+  });
+});
+
 describe("reducer — carry sisa peserta ke sesi berikutnya", () => {
   it("sisa peserta (belum menang) otomatis pindah ke sesi berikutnya", () => {
     let state = createInitialState();

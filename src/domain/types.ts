@@ -17,6 +17,8 @@ export interface DrawHistory {
 
 export interface DrawSession {
   id: number; // 1..sessionCount
+  /** Nama sesi/hadiah (mis. "KULKAS"). Kosong = tampil "Sesi {id}". */
+  name: string;
   participants: Participant[];
   winners: Participant[];
   history: DrawHistory[];
@@ -54,6 +56,7 @@ export const MIN_SPIN_DURATION_MS = 1000;
 export const MAX_SPIN_DURATION_MS = 15000;
 export const MIN_SPIN_REVOLUTIONS = 2;
 export const MAX_SPIN_REVOLUTIONS = 20;
+export const MAX_SESSION_NAME_LENGTH = 40;
 
 export interface LuckyDrawState {
   schemaVersion: 1;

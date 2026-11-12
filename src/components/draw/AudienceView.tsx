@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { LogOut, Projector, RotateCcw, Square, Trophy, Users } from "lucide-react";
 import type { DrawSession, LuckyDrawState } from "../../domain/types";
-import { getEligibleParticipants } from "../../domain/sessionRules";
+import { getEligibleParticipants, getSessionDisplayName } from "../../domain/sessionRules";
 import type { PendingDraw } from "../../hooks/useLuckyDraw";
 import { SpinAnimation } from "./SpinAnimation";
 import { SpinButton } from "./SpinButton";
@@ -121,7 +121,7 @@ export function AudienceView({
               {state.eventName}
             </p>
             <p className="truncate text-[11px] font-bold uppercase tracking-[0.3em] text-muted">
-              Sesi {session.id} · {session.participants.length} peserta
+              {getSessionDisplayName(session)} · {session.participants.length} peserta
             </p>
           </div>
         </div>
@@ -141,17 +141,23 @@ export function AudienceView({
 
       {/* Panggung */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 sm:px-16">
-        <div className="w-full max-w-4xl">
-          <SpinAnimation
-            key={session.id}
-            isSpinning={isThisSessionSpinning}
-            names={drumNames}
-            targetIndex={targetIndex}
-            revolutions={revolutions}
-            durationMs={durationMs}
-            idleText={idleText}
-            large
-          />
+        <div className="w-full max-w-4xl text-center">
+          {/* Nama sesi/hadiah — besar, tampil sebelum & saat pengundian */}
+          <h2 className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-5xl font-black leading-tight tracking-tight text-transparent drop-shadow-[0_4px_16px_rgba(220,38,38,0.35)] sm:text-6xl">
+            {getSessionDisplayName(session)}
+          </h2>
+          <div className="mt-4">
+            <SpinAnimation
+              key={session.id}
+              isSpinning={isThisSessionSpinning}
+              names={drumNames}
+              targetIndex={targetIndex}
+              revolutions={revolutions}
+              durationMs={durationMs}
+              idleText={idleText}
+              large
+            />
+          </div>
         </div>
 
         {isThisSessionSpinning ? (

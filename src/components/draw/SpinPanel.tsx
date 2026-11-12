@@ -6,7 +6,7 @@ import {
   type DrawSession,
   type LuckyDrawState,
 } from "../../domain/types";
-import { getEligibleParticipants } from "../../domain/sessionRules";
+import { getEligibleParticipants, getSessionDisplayName } from "../../domain/sessionRules";
 import type { PendingDraw } from "../../hooks/useLuckyDraw";
 import { STATUS_LABEL } from "../layout/SessionNavigation";
 import { SpinAnimation } from "./SpinAnimation";
@@ -85,8 +85,15 @@ export function SpinPanel({
     >
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line px-6 py-4">
         <div>
-          <h2 className="text-lg font-black text-ink">Pengundian Sesi {session.id}</h2>
+          <h2 className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-2xl font-black leading-tight text-transparent sm:text-3xl">
+            {getSessionDisplayName(session)}
+          </h2>
           <p className="flex items-center gap-2 text-sm font-semibold text-muted">
+            {session.name.trim() !== "" && (
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted">
+                Sesi {session.id} ·
+              </span>
+            )}
             <Users className="size-4" aria-hidden />
             {session.participants.length} peserta · {session.winners.length} pemenang
           </p>

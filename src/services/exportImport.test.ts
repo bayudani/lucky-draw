@@ -56,4 +56,12 @@ describe("buildCsv", () => {
     const csv = buildCsv(state);
     expect(csv).toContain("1,Sesi 1,Budi; Siti; Ani,3,,0");
   });
+
+  it("menggunakan nama sesi kustom bila diisi", () => {
+    const state = createInitialState();
+    state.sessions[0].name = "KULKAS";
+    state.sessions[0].winners = [{ id: "w", name: "Budi" }];
+    const csv = buildCsv(state);
+    expect(csv).toContain("1,KULKAS,Budi,1,,0");
+  });
 });

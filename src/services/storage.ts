@@ -3,6 +3,7 @@ import {
   DEFAULT_SPIN_REVOLUTIONS,
   DEFAULT_WINNER_COUNT,
   MAX_SESSION_COUNT,
+  MAX_SESSION_NAME_LENGTH,
   MAX_SPIN_DURATION_MS,
   MAX_SPIN_REVOLUTIONS,
   MAX_WINNER_COUNT,
@@ -139,7 +140,13 @@ function parseSession(value: unknown, expectedId: number): DrawSession | null {
     }
     winnerCount = raw;
   }
-  return { id: expectedId, participants, winners, history, status, drawnAt, winnerCount };
+  // Nama sesi/hadiah opsional — kosong berarti "Sesi {id}".
+  let name = "";
+  if (value.name !== undefined) {
+    if (typeof value.name !== "string") return null;
+    name = value.name.trim().slice(0, MAX_SESSION_NAME_LENGTH);
+  }
+  return { id: expectedId, name, participants, winners, history, status, drawnAt, winnerCount };
 }
 
 /**

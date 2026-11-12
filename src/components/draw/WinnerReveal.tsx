@@ -6,6 +6,7 @@ import {
   useSpring,
 } from "framer-motion";
 import { PartyPopper } from "lucide-react";
+import { getSessionDisplayName } from "../../domain/sessionRules";
 import type { DrawSession } from "../../domain/types";
 
 interface WinnerRevealProps {
@@ -137,13 +138,23 @@ export function WinnerReveal({
                     ? `SELAMAT KEPADA ${session.winners.length} PEMENANG!`
                     : "SELAMAT KEPADA PEMENANG!"}
                 </p>
-                <p
-                  className={`mt-1 font-bold uppercase tracking-[0.25em] text-muted ${
-                    stage ? "text-sm" : "text-[11px]"
-                  }`}
-                >
-                  Pemenang Sesi {session.id}
-                </p>
+                {session.winners.length > 1 ? (
+                  <h3
+                    className={`mt-2 break-words bg-gradient-to-b from-white via-red-50 to-red-300 bg-clip-text font-black leading-tight text-transparent drop-shadow-[0_2px_18px_rgba(220,38,38,0.45)] ${
+                      stage ? "text-5xl xl:text-6xl" : "text-3xl xl:text-4xl"
+                    }`}
+                  >
+                    {getSessionDisplayName(session)}
+                  </h3>
+                ) : (
+                  <p
+                    className={`mt-2 break-words bg-gradient-to-b from-amber-100 to-amber-400 bg-clip-text font-black uppercase leading-tight tracking-[0.18em] text-transparent drop-shadow-[0_2px_14px_rgba(245,158,11,0.35)] ${
+                      stage ? "text-3xl xl:text-4xl" : "text-xl xl:text-2xl"
+                    }`}
+                  >
+                    Pemenang {getSessionDisplayName(session)}
+                  </p>
+                )}
 
                 {session.winners.length === 1 ? (
                   <h3

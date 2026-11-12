@@ -64,7 +64,7 @@ export function buildCsv(state: LuckyDrawState): string {
     .map((session) =>
       [
         String(session.id),
-        `Sesi ${session.id}`,
+        session.name.trim() !== "" ? session.name : `Sesi ${session.id}`,
         session.winners.length > 0 ? session.winners.map((w) => w.name).join("; ") : "",
         String(session.winners.length),
         session.drawnAt ?? "",

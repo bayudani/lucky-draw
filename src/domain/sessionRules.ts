@@ -5,6 +5,12 @@ export function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Nama tampilan sesi: nama kustom (hadiah) bila diisi, selain itu "Sesi {id}". */
+export function getSessionDisplayName(session: Pick<DrawSession, "id" | "name">): string {
+  const trimmed = session.name.trim();
+  return trimmed.length > 0 ? trimmed : `Sesi ${session.id}`;
+}
+
 /**
  * Kumpulan nama (ternormalisasi) semua pemenang lintas sesi,
  * tidak termasuk sesi yang sedang diproses (excludeSessionId).

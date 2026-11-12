@@ -44,6 +44,7 @@ function LuckyDrawApp() {
     stopSpin,
     setParticipants,
     setWinnerCount,
+    setSessionName,
     resetSession,
     redrawSession,
     resetAll,
@@ -332,7 +333,9 @@ function LuckyDrawApp() {
       <SettingsModal
         open={settingsOpen}
         settings={state.settings}
+        sessions={sessions}
         onChange={updateSettings}
+        onSetSessionName={setSessionName}
         onClose={() => setSettingsOpen(false)}
       />
 

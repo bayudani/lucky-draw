@@ -22,10 +22,8 @@ export function SessionNavigation({
   const ordered = [...sessions].sort((a, b) => a.id - b.id);
 
   return (
-    <nav
-      aria-label="Navigasi sesi"
-      className="grid grid-cols-5 gap-2 px-6 py-4 xl:grid-cols-10"
-    >
+    <nav aria-label="Navigasi sesi" className="px-4 py-4 sm:px-6">
+      <div className="flex gap-2 overflow-x-auto pb-1 xl:grid xl:grid-cols-10 xl:overflow-visible xl:pb-0">
       {ordered.map((session) => {
         const isActive = session.id === activeSessionId;
         const Icon =
@@ -56,7 +54,7 @@ export function SessionNavigation({
             title={`Sesi ${session.id} — ${STATUS_LABEL[session.status]}${
               session.winner ? ` — Pemenang: ${session.winner.name}` : ""
             }`}
-            className={`${base} ${state} ${active}`}
+            className={`${base} ${state} ${active} min-w-[7.5rem] shrink-0 xl:min-w-0`}
           >
             <span className="text-sm font-black">SESI {session.id}</span>
             <span className="flex items-center gap-1 text-[11px] font-semibold leading-tight">
@@ -68,6 +66,7 @@ export function SessionNavigation({
           </motion.button>
         );
       })}
+      </div>
     </nav>
   );
 }

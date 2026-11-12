@@ -46,6 +46,7 @@ export interface PendingDraw {
 type Action =
   | { type: "SET_PARTICIPANTS"; sessionId: number; names: string[] }
   | { type: "COMPLETE_DRAW"; sessionId: number; winnerId: string; drawnAt: string }
+  | { type: "REDRAW_SESSION"; sessionId: number }
   | { type: "RESET_SESSION"; sessionId: number }
   | { type: "RESET_ALL" }
   | { type: "IMPORT_STATE"; state: LuckyDrawState }
@@ -126,6 +127,21 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
             drawnAt: action.drawnAt,
           },
         ],
+      }));
+    }
+
+    case "REDRAW_SESSION": {
+      // Batalkan hasil undian sesi ini: pemenang & histori sesi dihapus,
+      // peserta dipertahankan, sesi kembali "ready" untuk diundi ulang.
+      // Hanya berlaku pada sesi yang sudah selesai (aksi eksplisit, bukan spin biasa).
+      const session = findSession(state, action.sessionId);
+      if (!session || session.status !== "completed") return state;
+      return mapSession(state, action.sessionId, (s) => ({
+        ...s,
+        winner: null,
+        drawnAt: null,
+        history: [],
+        status: computeSessionStatus(s.participants.length, false),
       }));
     }
 
@@ -217,6 +233,10 @@ export function useLuckyDraw() {
 
   const resetSession = useCallback((sessionId: number) => {
     dispatch({ type: "RESET_SESSION", sessionId });
+  }, []);
+
+  const redrawSession = useCallback((sessionId: number) => {
+    dispatch({ type: "REDRAW_SESSION", sessionId });
   }, []);
 
   const resetAll = useCallback(() => {
@@ -312,6 +332,7 @@ export function useLuckyDraw() {
     spin,
     setParticipants,
     resetSession,
+    redrawSession,
     resetAll,
     importState,
     updateSettings,

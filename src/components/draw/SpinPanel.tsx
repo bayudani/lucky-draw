@@ -19,6 +19,7 @@ interface SpinPanelProps {
   showWinner: boolean;
   hasNextSession: boolean;
   onSpin: () => void;
+  onRedraw: () => void;
   onNextSession: () => void;
   onOpenHistory: () => void;
   onOpenAudience: () => void;
@@ -34,6 +35,7 @@ export function SpinPanel({
   showWinner,
   hasNextSession,
   onSpin,
+  onRedraw,
   onNextSession,
   onOpenHistory,
   onOpenAudience,
@@ -151,7 +153,21 @@ export function SpinPanel({
           onOpenHistory={onOpenHistory}
         />
 
-        <div className="mt-auto flex justify-end">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+          {isCompleted && (
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 3 }}
+              type="button"
+              onClick={onRedraw}
+              disabled={isSpinning}
+              className="flex items-center gap-2 rounded-xl border border-red-300/40 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-5 py-2.5 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:brightness-110 disabled:opacity-40"
+              title="Undi ulang sesi ini (pemenang sebelumnya dibatalkan)"
+            >
+              <RotateCcw className="size-4" aria-hidden />
+              Spin Ulang
+            </motion.button>
+          )}
           <motion.button
             whileHover={{ y: -1 }}
             whileTap={{ y: 2 }}

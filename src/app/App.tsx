@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import { TriangleAlert } from "lucide-react";
+import { Smartphone, TriangleAlert, X } from "lucide-react";
 import { AppHeader } from "../components/layout/AppHeader";
 import { SessionNavigation } from "../components/layout/SessionNavigation";
 import { ParticipantGrid } from "../components/participants/ParticipantGrid";
@@ -26,6 +26,7 @@ import { SESSION_COUNT, type LuckyDrawState } from "../domain/types";
 
 type ConfirmKind =
   | { type: "reset-session"; sessionId: number }
+  | { type: "redraw"; sessionId: number }
   | { type: "reset-all" }
   | { type: "import"; state: LuckyDrawState }
   | null;
@@ -42,6 +43,7 @@ function LuckyDrawApp() {
     spin,
     setParticipants,
     resetSession,
+    redrawSession,
     resetAll,
     importState,
     updateSettings,
@@ -55,6 +57,7 @@ function LuckyDrawApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [audienceMode, setAudienceMode] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmKind>(null);
+  const [showPortraitTip, setShowPortraitTip] = useState(true);
 
   // ESC di fullscreen menutup fullscreenElement → otomatis keluar mode audiens.
   useEffect(() => {
@@ -127,6 +130,24 @@ function LuckyDrawApp() {
           },
         };
       }
+      case "redraw": {
+        const previousWinner =
+          sessions.find((s) => s.id === confirmState.sessionId)?.winner?.name ?? "—";
+        return {
+          title: `Undi Ulang Sesi ${confirmState.sessionId}?`,
+          description: `Pemenang sebelumnya (${previousWinner}) dan histori undian sesi ini akan dihapus, lalu sesi diundi ulang dengan peserta yang sama. Sesi lain dan pemenang lintas sesi tidak terpengaruh.`,
+          confirmLabel: "Ya, Undi Ulang",
+          danger: true,
+          onConfirm: () => {
+            redrawSession(confirmState.sessionId);
+            setConfirmState(null);
+            notify(
+              `Sesi ${confirmState.sessionId} siap diundi ulang. Tekan SPIN untuk mengundi.`,
+              "success",
+            );
+          },
+        };
+      }
       case "reset-all":
         return {
           title: "Reset Seluruh Acara?",
@@ -157,7 +178,7 @@ function LuckyDrawApp() {
       default:
         return null;
     }
-  }, [confirmState, sessions, resetSession, resetAll, importState, notify]);
+  }, [confirmState, sessions, resetSession, redrawSession, resetAll, importState, notify]);
 
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
@@ -223,7 +244,7 @@ function LuckyDrawApp() {
         onSelect={(id) => setActiveSessionId(id)}
       />
 
-      <main className="grid min-h-0 flex-1 gap-4 px-6 pb-6 lg:grid-cols-[1.8fr_1fr] max-lg:grid-rows-[auto_minmax(24rem,1fr)]">
+      <main className="grid min-h-0 flex-1 gap-4 px-4 pb-6 sm:px-6 lg:grid-cols-[1.8fr_1fr] max-lg:grid-rows-[auto_minmax(26rem,1fr)]">
         <ParticipantGrid
           session={session}
           previousWinnerNames={previousWinnerNames}
@@ -240,6 +261,7 @@ function LuckyDrawApp() {
           showWinner={session.status === "completed"}
           hasNextSession={Boolean(nextDrawable)}
           onSpin={handleSpin}
+          onRedraw={() => setConfirmState({ type: "redraw", sessionId: session.id })}
           onNextSession={() => {
             if (nextDrawable) setActiveSessionId(nextDrawable.id);
           }}
@@ -253,6 +275,22 @@ function LuckyDrawApp() {
         Total {SESSION_COUNT} sesi · Pemenang unik sepanjang acara · Data tersimpan otomatis
         di perangkat ini (LocalStorage)
       </p>
+
+      {/* Tips orientasi untuk layar kecil (DESIGN.md §6) — bisa ditutup */}
+      {showPortraitTip && (
+        <div className="hidden max-md:portrait:flex items-center gap-2 border-t border-amber-500/40 bg-amber-950/50 px-4 py-2 text-xs text-amber-200">
+          <Smartphone className="size-3.5 shrink-0" aria-hidden />
+          <span>Untuk pengalaman terbaik, putar ke mode landscape atau gunakan layar lebih besar.</span>
+          <button
+            type="button"
+            onClick={() => setShowPortraitTip(false)}
+            className="ml-auto rounded p-1 hover:bg-amber-900/50"
+            aria-label="Tutup tips"
+          >
+            <X className="size-3.5" aria-hidden />
+          </button>
+        </div>
+      )}
 
       <ParticipantInputDialog
         open={editorOpen}
@@ -287,6 +325,7 @@ function LuckyDrawApp() {
             pendingDraw={pendingDraw}
             hasNextSession={Boolean(nextDrawable)}
             onSpin={handleSpin}
+            onRedraw={() => setConfirmState({ type: "redraw", sessionId: session.id })}
             onNextSession={() => {
               if (nextDrawable) setActiveSessionId(nextDrawable.id);
             }}

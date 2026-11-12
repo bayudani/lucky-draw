@@ -37,8 +37,8 @@ export function AppHeader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-gradient-to-b from-[#232327] to-[#1c1c1f] px-6 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-      <div className="flex items-center gap-4">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-gradient-to-b from-[#232327] to-[#1c1c1f] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:px-6">
+      <div className="flex items-center gap-3 sm:gap-4">
         <motion.div
           whileHover={{ rotateY: 14, rotateX: -8 }}
           style={{ transformPerspective: 400 }}
@@ -59,7 +59,7 @@ export function AppHeader({
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
         <button
           type="button"
           onClick={onOpenAudience}
@@ -73,7 +73,7 @@ export function AppHeader({
         <button
           type="button"
           onClick={onOpenHistory}
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
         >
           <History className="size-4" aria-hidden />
           <span className="hidden md:inline">Rekap &amp; Histori</span>
@@ -83,7 +83,7 @@ export function AppHeader({
           type="button"
           onClick={onExportJson}
           title="Unduh backup JSON"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
         >
           <FileJson className="size-4" aria-hidden />
           <span className="hidden md:inline">Backup</span>
@@ -93,7 +93,7 @@ export function AppHeader({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           title="Impor backup JSON"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
         >
           <Download className="size-4" aria-hidden />
           <span className="hidden md:inline">Restore</span>
@@ -114,7 +114,7 @@ export function AppHeader({
           type="button"
           onClick={onExportCsv}
           title="Ekspor rekap CSV"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
         >
           <FileSpreadsheet className="size-4" aria-hidden />
           <span className="hidden md:inline">CSV</span>
@@ -124,7 +124,7 @@ export function AppHeader({
           type="button"
           onClick={onOpenSettings}
           title="Pengaturan acara"
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-2.5 py-2 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
         >
           <Settings2 className="size-4" aria-hidden />
           <span className="hidden md:inline">Pengaturan</span>
@@ -140,7 +140,9 @@ export function AppHeader({
           <span className="hidden md:inline">Reset Acara</span>
         </button>
 
-        <FullscreenButton />
+        <div className="hidden sm:block">
+          <FullscreenButton />
+        </div>
       </div>
     </header>
   );

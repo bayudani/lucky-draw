@@ -65,7 +65,7 @@ export function SpinAnimation({
   return (
     <div
       className={`relative flex items-center justify-center overflow-hidden rounded-2xl border border-primary/30 bg-[radial-gradient(ellipse_at_center,rgba(153,27,27,0.35),rgba(24,24,27,0.9)_75%)] shadow-[inset_0_2px_12px_rgba(0,0,0,0.6)] ${
-        large ? "h-80" : "h-44"
+        large ? "h-64 sm:h-80" : "h-44"
       }`}
       aria-label="Area animasi pengundian"
     >
@@ -80,10 +80,14 @@ export function SpinAnimation({
       />
 
       {count > 0 ? (
-        <div className="[perspective:900px]">
+        <div className="flex w-full justify-center [perspective:900px]">
           <motion.div
             className="relative"
-            style={{ width: large ? 640 : 380, height: itemHeight, transformStyle: "preserve-3d" }}
+            style={{
+              width: large ? "min(100%, 640px)" : "min(100%, 380px)",
+              height: itemHeight,
+              transformStyle: "preserve-3d",
+            }}
             animate={{ rotateX: rotation }}
             transition={{ duration: durationS, ease: [0.12, 0.86, 0.22, 1] }}
           >
@@ -97,7 +101,7 @@ export function SpinAnimation({
               >
                 <span
                   className={`max-w-full truncate font-black tracking-tight transition-colors ${
-                    large ? "text-4xl" : "text-2xl"
+                    large ? "text-3xl sm:text-4xl" : "text-2xl"
                   } ${
                     rolling ? "text-ink/85" : "text-ink drop-shadow-[0_0_18px_rgba(220,38,38,0.55)]"
                   }`}

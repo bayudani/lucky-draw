@@ -131,3 +131,58 @@ describe("reducer — UPDATE_SETTINGS", () => {
     expect(state.settings.maxParticipantsPerSession).toBe(1000);
   });
 });
+
+describe("reducer � REDRAW_SESSION", () => {
+  function completedState(): { state: LuckyDrawState; winnerId: string } {
+    let state = createInitialState();
+    state = withParticipants(state, 1, ["Budi", "Siti", "Ani"]);
+    const winnerId = state.sessions[0].participants[0].id;
+    state = reducer(state, {
+      type: "COMPLETE_DRAW",
+      sessionId: 1,
+      winnerId,
+      drawnAt: "2026-11-12T00:00:00.000Z",
+    });
+    return { state, winnerId };
+  }
+
+  it("membatalkan pemenang & histori, mempertahankan peserta, status kembali ready", () => {
+    const { state } = completedState();
+    const redrawn = reducer(state, { type: "REDRAW_SESSION", sessionId: 1 });
+    const session = redrawn.sessions[0];
+    expect(session.status).toBe("ready");
+    expect(session.winner).toBeNull();
+    expect(session.drawnAt).toBeNull();
+    expect(session.history).toHaveLength(0);
+    expect(session.participants).toHaveLength(3);
+  });
+
+  it("menolak redraw pada sesi yang belum selesai", () => {
+    let state = createInitialState();
+    state = withParticipants(state, 1, ["Budi"]);
+    const rejected = reducer(state, { type: "REDRAW_SESSION", sessionId: 1 });
+    expect(rejected).toBe(state);
+  });
+
+  it("sesi lain tidak terpengaruh", () => {
+    const { state } = completedState();
+    const withSecond = withParticipants(state, 2, ["Rudi"]);
+    const redrawn = reducer(withSecond, { type: "REDRAW_SESSION", sessionId: 1 });
+    expect(redrawn.sessions[1].participants).toHaveLength(1);
+    expect(redrawn.sessions[1].status).toBe("ready");
+  });
+
+  it("setelah redraw, peserta lama bisa diundi lagi di sesi yang sama", () => {
+    const { state, winnerId } = completedState();
+    const redrawn = reducer(state, { type: "REDRAW_SESSION", sessionId: 1 });
+    const redo = reducer(redrawn, {
+      type: "COMPLETE_DRAW",
+      sessionId: 1,
+      winnerId,
+      drawnAt: "2026-11-12T01:00:00.000Z",
+    });
+    expect(redo.sessions[0].status).toBe("completed");
+    expect(redo.sessions[0].winner?.id).toBe(winnerId);
+    expect(redo.sessions[0].history).toHaveLength(1);
+  });
+});

@@ -20,7 +20,8 @@ interface WinnerRevealProps {
 
 const CONFETTI_COLORS = ["#DC2626", "#991B1B", "#F59E0B", "#FBBF24", "#FAFAFA", "#EF4444"];
 
-function ConfettiBurst() {
+/** Ledakan confetti 3D — dipakai WinnerReveal & WinnerTakeover. */
+export function ConfettiBurst() {
   const pieces = useMemo(
     () =>
       Array.from({ length: 52 }, (_, index) => ({

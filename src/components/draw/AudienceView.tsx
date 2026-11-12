@@ -1,12 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { LogOut, Projector, Users } from "lucide-react";
+import { LogOut, Projector, RotateCcw, Trophy, Users } from "lucide-react";
 import type { DrawSession, LuckyDrawState } from "../../domain/types";
 import { getEligibleParticipants } from "../../domain/sessionRules";
 import type { PendingDraw } from "../../hooks/useLuckyDraw";
 import { SpinAnimation } from "./SpinAnimation";
 import { SpinButton } from "./SpinButton";
 import { WinnerReveal } from "./WinnerReveal";
+import { WinnerTakeover } from "./WinnerTakeover";
 
 interface AudienceViewProps {
   session: DrawSession;
@@ -15,6 +16,7 @@ interface AudienceViewProps {
   pendingDraw: PendingDraw | null;
   hasNextSession: boolean;
   onSpin: () => void;
+  onRedraw: () => void;
   onNextSession: () => void;
   onExit: () => void;
 }
@@ -30,15 +32,24 @@ export function AudienceView({
   pendingDraw,
   hasNextSession,
   onSpin,
+  onRedraw,
   onNextSession,
   onExit,
 }: AudienceViewProps) {
+  const [takeoverDismissed, setTakeoverDismissed] = useState(false);
+
   // Masuk fullscreen saat overlay dibuka.
   useEffect(() => {
     document.documentElement.requestFullscreen().catch(() => {
       // Browser menolak (mis. tanpa gesture) — mode tetap tampil tanpa OS fullscreen.
     });
   }, []);
+
+  // Popup pemenang kembali aktif saat pindah sesi.
+  useEffect(() => {
+    setTakeoverDismissed(false);
+  }, [session.id]);
+
 
   const eligible = getEligibleParticipants(session, state);
   const drumNames =
@@ -88,16 +99,16 @@ export function AudienceView({
       </div>
 
       {/* Bar atas: identitas + keluar */}
-      <div className="relative z-30 flex items-center justify-between px-8 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg border border-red-300/40 bg-[linear-gradient(160deg,#f87171,#991b1b)] text-lg font-black text-white shadow-[inset_0_2px_0_rgba(255,255,255,0.4)]">
+      <div className="relative z-30 flex items-center justify-between gap-2 px-4 py-3 sm:px-8 sm:py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-red-300/40 bg-[linear-gradient(160deg,#f87171,#991b1b)] text-lg font-black text-white shadow-[inset_0_2px_0_rgba(255,255,255,0.4)]">
             ★
           </div>
-          <div>
-            <p className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-lg font-black leading-tight text-transparent">
+          <div className="min-w-0">
+            <p className="truncate bg-gradient-to-b from-white to-red-200 bg-clip-text text-lg font-black leading-tight text-transparent">
               {state.eventName}
             </p>
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-muted">
+            <p className="truncate text-[11px] font-bold uppercase tracking-[0.3em] text-muted">
               Sesi {session.id} · {session.participants.length} peserta
             </p>
           </div>
@@ -107,16 +118,17 @@ export function AudienceView({
           whileTap={{ y: 2 }}
           type="button"
           onClick={onExit}
-          className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-4 py-2 text-sm font-bold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+          className="flex shrink-0 items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-3 py-2 text-sm font-bold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
           title="Kembali ke panel operator"
         >
           <LogOut className="size-4" aria-hidden />
-          Keluar Tampilan Audiens
+          <span className="hidden sm:inline">Keluar Tampilan Audiens</span>
+          <span className="sm:hidden">Keluar</span>
         </motion.button>
       </div>
 
       {/* Panggung */}
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-16 py-6">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 sm:px-16">
         <div className="w-full max-w-4xl">
           <SpinAnimation
             key={session.id}
@@ -139,10 +151,37 @@ export function AudienceView({
             Sedang Mengundi...
           </div>
         ) : isCompleted ? (
-          <p className="flex items-center gap-2 text-sm font-semibold text-muted">
-            <Users className="size-4" aria-hidden />
-            Pengundian sesi ini telah selesai — kembali ke panel operator untuk sesi berikutnya
-          </p>
+          <div className="flex flex-col items-center gap-3">
+            <p className="flex items-center gap-2 text-sm font-semibold text-muted">
+              <Users className="size-4" aria-hidden />
+              Pengundian sesi ini telah selesai
+            </p>
+            {takeoverDismissed && (
+              <div className="flex items-center gap-2">
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 2 }}
+                  type="button"
+                  onClick={onRedraw}
+                  className="flex items-center gap-2 rounded-xl border border-red-300/40 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-5 py-2.5 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:brightness-110"
+                  title="Undi ulang sesi ini (pemenang sebelumnya dibatalkan)"
+                >
+                  <RotateCcw className="size-4" aria-hidden />
+                  Spin Ulang
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 2 }}
+                  type="button"
+                  onClick={() => setTakeoverDismissed(false)}
+                  className="flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#333338] to-[#232326] px-5 py-2.5 text-sm font-bold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-3px_0_rgba(0,0,0,0.3)] hover:text-ink"
+                >
+                  <Trophy className="size-4" aria-hidden />
+                  Tampilkan Pemenang
+                </motion.button>
+              </div>
+            )}
+          </div>
         ) : !canSpin ? (
           <p className="text-sm font-semibold text-amber-300">
             {session.status === "empty"
@@ -160,7 +199,7 @@ export function AudienceView({
         <div className="w-full max-w-4xl">
           <WinnerReveal
             session={session}
-            visible={isCompleted && !isSpinning}
+            visible={isCompleted && !isSpinning && takeoverDismissed}
             hasNextSession={hasNextSession}
             onNextSession={onNextSession}
             onOpenHistory={() => {}}
@@ -173,6 +212,16 @@ export function AudienceView({
         <Projector className="mr-1 inline size-3.5" aria-hidden />
         Tekan ESC atau tombol keluar untuk kembali ke panel operator
       </div>
+
+      {/* Popup fullscreen pemenang — momen dramatis saat hasil ditentukan */}
+      <WinnerTakeover
+        session={session}
+        visible={isCompleted && !isSpinning && !takeoverDismissed}
+        hasNextSession={hasNextSession}
+        onNextSession={onNextSession}
+        onRedraw={onRedraw}
+        onDismiss={() => setTakeoverDismissed(true)}
+      />
     </motion.div>
   );
 }

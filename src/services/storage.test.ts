@@ -136,6 +136,21 @@ describe("validateLuckyDrawState", () => {
     expect(result?.eventName).toBe("Acara Spesial Panitia");
   });
 
+  it("autoCarryOverParticipants default true pada backup lama", () => {
+    const state = createInitialState();
+    const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
+    delete (raw.settings as Record<string, unknown>).autoCarryOverParticipants;
+    const result = validateLuckyDrawState(raw);
+    expect(result?.settings.autoCarryOverParticipants).toBe(true);
+  });
+
+  it("menolak autoCarryOverParticipants bukan boolean", () => {
+    const state = createInitialState();
+    const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
+    (raw.settings as Record<string, unknown>).autoCarryOverParticipants = "yes";
+    expect(validateLuckyDrawState(raw)).toBeNull();
+  });
+
   it("menolak settings tidak valid", () => {
     const state = createInitialState();
     state.settings.maxParticipantsPerSession = 0;

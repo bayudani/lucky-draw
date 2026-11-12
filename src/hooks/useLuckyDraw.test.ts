@@ -232,6 +232,72 @@ describe("reducer — SET_WINNER_COUNT", () => {
   });
 });
 
+describe("reducer — carry sisa peserta ke sesi berikutnya", () => {
+  it("sisa peserta (belum menang) otomatis pindah ke sesi berikutnya", () => {
+    let state = createInitialState();
+    state = reducer(state, { type: "SET_WINNER_COUNT", sessionId: 1, winnerCount: 2 });
+    state = withParticipants(state, 1, ["Budi", "Siti", "Ani", "Rudi", "Zul"]);
+    state = completeDraw(state, 1, [0, 1].map((i) => winnerId(state, 1, i)));
+    expect(state.sessions[0].status).toBe("completed");
+    expect(state.sessions[1].participants.map((p) => p.name)).toEqual(["Ani", "Rudi", "Zul"]);
+    expect(state.sessions[1].status).toBe("ready");
+  });
+
+  it("pemenang sesi ini tidak ikut dipindahkan", () => {
+    let state = createInitialState();
+    state = withParticipants(state, 1, ["Budi", "Siti", "Ani"]);
+    state = completeDraw(state, 1, [winnerId(state, 1)]);
+    const names = state.sessions[1].participants.map((p) => p.name);
+    expect(names).not.toContain("Budi");
+    expect(names).toEqual(["Siti", "Ani"]);
+  });
+
+  it("tidak menduplikasi nama yang sudah ada di sesi berikutnya", () => {
+    let state = createInitialState();
+    state = withParticipants(state, 2, ["Ani", "Orang Baru"]);
+    state = withParticipants(state, 1, ["Budi", "Siti", "Ani", "Rudi", "Zul"]);
+    state = completeDraw(state, 1, [winnerId(state, 1)]);
+    expect(state.sessions[1].participants.map((p) => p.name)).toEqual([
+      "Ani",
+      "Orang Baru",
+      "Siti",
+      "Rudi",
+      "Zul",
+    ]);
+  });
+
+  it("tidak memindahkan saat toggle off", () => {
+    let state = createInitialState();
+    state = reducer(state, {
+      type: "UPDATE_SETTINGS",
+      settings: { autoCarryOverParticipants: false },
+    });
+    state = withParticipants(state, 1, ["Budi", "Siti", "Ani"]);
+    state = completeDraw(state, 1, [winnerId(state, 1)]);
+    expect(state.sessions[1].participants).toHaveLength(0);
+    expect(state.sessions[1].status).toBe("empty");
+  });
+
+  it("sesi terakhir tidak memindahkan ke mana pun", () => {
+    let state = createInitialState();
+    state = withParticipants(state, 10, ["Budi", "Siti"]);
+    state = completeDraw(state, 10, [winnerId(state, 10)]);
+    expect(state.sessions[9].status).toBe("completed");
+    expect(state.sessions).toHaveLength(10);
+  });
+
+  it("rantai: sisa sesi 2 ikut pindah ke sesi 3", () => {
+    let state = createInitialState();
+    state = reducer(state, { type: "SET_WINNER_COUNT", sessionId: 1, winnerCount: 2 });
+    state = withParticipants(state, 1, ["Budi", "Siti", "Ani", "Rudi", "Zul"]);
+    state = completeDraw(state, 1, [0, 1].map((i) => winnerId(state, 1, i)));
+    // Sesi 2 terisi [Ani, Rudi, Zul]; undi 1 pemenang → Rudi
+    state = completeDraw(state, 2, [winnerId(state, 2, 1)]);
+    expect(state.sessions[1].status).toBe("completed");
+    expect(state.sessions[2].participants.map((p) => p.name)).toEqual(["Ani", "Zul"]);
+  });
+});
+
 describe("reducer — RESET_ALL dengan jumlah sesi dinamis", () => {
   it("menjaga pengaturan (termasuk jumlah sesi) saat reset seluruh acara", () => {
     let state = createInitialState();

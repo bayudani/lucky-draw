@@ -30,6 +30,8 @@ export function createInitialState(): LuckyDrawState {
       // update.md: global unique winner wajib aktif.
       globalUniqueWinners: true,
       sessionCount: SESSION_COUNT,
+      // Sisa peserta yang belum menang otomatis mengalir ke sesi berikutnya.
+      autoCarryOverParticipants: true,
       spinDurationMs: 4000,
       spinRevolutions: 6,
     },

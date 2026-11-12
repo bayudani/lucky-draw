@@ -7,6 +7,7 @@ import {
   getEligibleParticipants,
   getWinnerNames,
   computeSessionStatus,
+  normalizeName,
 } from "../domain/sessionRules";
 import type {
   DrawSession,
@@ -121,7 +122,7 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
           : false,
       );
       if (violatesGlobalUnique) return state;
-      return mapSession(state, action.sessionId, (s) => ({
+      const updated = mapSession(state, action.sessionId, (s) => ({
         ...s,
         winners,
         status: "completed",
@@ -136,6 +137,29 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
             drawnAt: action.drawnAt,
           },
         ],
+      }));
+
+      // Alur otomatis: sisa peserta (yang BELUM menang) pindah ke sesi berikutnya,
+      // jadi panitia tidak perlu input nama ulang. Nama yang sudah menang
+      // (termasuk pemenang sesi ini) TIDAK ikut dibawa.
+      if (!state.settings.autoCarryOverParticipants) return updated;
+      const completed = findSession(updated, action.sessionId);
+      const next = findSession(updated, action.sessionId + 1);
+      if (!completed || !next || next.status === "completed") return updated;
+      const allWinnerNames = new Set(getWinnerNames(updated));
+      const carried = completed.participants.filter(
+        (p) => !allWinnerNames.has(normalizeName(p.name)),
+      );
+      if (carried.length === 0) return updated;
+      const nextKeys = new Set(next.participants.map((p) => normalizeName(p.name)));
+      const merged = [
+        ...next.participants,
+        ...carried.filter((p) => !nextKeys.has(normalizeName(p.name))),
+      ];
+      return mapSession(updated, next.id, (s) => ({
+        ...s,
+        participants: merged,
+        status: computeSessionStatus(merged.length, s.winners.length > 0),
       }));
     }
 

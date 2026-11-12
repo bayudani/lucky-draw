@@ -225,6 +225,12 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
     // Konsistensi: jumlah sesi mengikuti array sesi yang ada.
     sessionCountSetting = value === sessionCount ? value : sessionCount;
   }
+  // Field opsional (backup lama) — default ON.
+  let autoCarryOverParticipants = true;
+  if (raw.settings.autoCarryOverParticipants !== undefined) {
+    if (typeof raw.settings.autoCarryOverParticipants !== "boolean") return null;
+    autoCarryOverParticipants = raw.settings.autoCarryOverParticipants;
+  }
 
   if (!isIsoDateString(raw.updatedAt)) return null;
 
@@ -240,6 +246,7 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
       maxParticipantsPerSession,
       globalUniqueWinners,
       sessionCount: sessionCountSetting,
+      autoCarryOverParticipants,
       spinDurationMs,
       spinRevolutions,
     },

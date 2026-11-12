@@ -211,6 +211,14 @@ export function SpinPanel({
           <p className="flex items-center justify-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#2c2c31] to-[#232326] px-4 py-3 text-sm font-semibold text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <Trophy className="size-4 text-amber-400" aria-hidden />
             Pengundian sesi ini telah selesai
+            {hasNextSession &&
+              state.settings.autoCarryOverParticipants &&
+              session.participants.length - session.winners.length > 0 && (
+                <span className="text-muted/80">
+                  · Sisa {session.participants.length - session.winners.length} peserta
+                  otomatis dipindahkan ke Sesi {session.id + 1}
+                </span>
+              )}
           </p>
         )}
 

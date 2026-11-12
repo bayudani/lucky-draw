@@ -1,4 +1,4 @@
-import { Gauge, List, Timer, Users } from "lucide-react";
+import { ArrowRightLeft, Gauge, List, Timer, Users } from "lucide-react";
 import {
   MAX_SESSION_COUNT,
   MAX_SPIN_DURATION_MS,
@@ -131,6 +131,30 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
             }}
             className={inputClass}
             aria-label="Kecepatan drum dalam putaran"
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
+          <span className="flex items-center gap-3">
+            <ArrowRightLeft className="size-5 text-muted" aria-hidden />
+            <span>
+              <span className="block text-sm font-bold text-ink">
+                Sisa peserta otomatis pindah ke sesi berikutnya
+              </span>
+              <span className="block text-xs text-muted">
+                Setelah sesi selesai, nama yang belum menang langsung masuk ke sesi
+                berikutnya — tidak perlu input ulang. Tetap bisa diedit/ditambah manual.
+              </span>
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={settings.autoCarryOverParticipants}
+            onChange={(event) =>
+              onChange({ autoCarryOverParticipants: event.target.checked })
+            }
+            className="size-5 accent-primary"
+            aria-label="Sisa peserta otomatis pindah ke sesi berikutnya"
           />
         </label>
 

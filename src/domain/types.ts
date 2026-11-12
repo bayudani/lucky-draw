@@ -31,6 +31,8 @@ export interface Settings {
   globalUniqueWinners: boolean; // wajib true sesuai update requirement
   /** Jumlah sesi pengundian (dinamis, default 10). */
   sessionCount: number;
+  /** Setelah sesi selesai, sisa peserta (yang belum menang) otomatis pindah ke sesi berikutnya. */
+  autoCarryOverParticipants: boolean;
   /** Lama animasi pengundian (ms). */
   spinDurationMs: number; // 1000..15000
   /** Jumlah putaran penuh drum selama durasi — menentukan kecepatan. */

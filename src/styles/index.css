@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  /* Red Premium design system (DESIGN.md update) */
+  --color-primary: #dc2626;
+  --color-deep: #991b1b;
+  --color-background: #18181b;
+  --color-surface: #27272a;
+  --color-elevated: #3f3f46;
+  --color-ink: #fafafa;
+  --color-muted: #a1a1aa;
+  --color-line: #3f3f46;
+
+  --font-display:
+    "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar gelap agar konsisten dengan tema */
+* {
+  scrollbar-color: var(--color-elevated) transparent;
+  scrollbar-width: thin;
+}

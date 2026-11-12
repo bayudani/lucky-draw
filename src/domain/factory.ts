@@ -1,5 +1,7 @@
 import {
   DEFAULT_MAX_PARTICIPANTS,
+  DEFAULT_SPIN_DURATION_MS,
+  DEFAULT_SPIN_REVOLUTIONS,
   SCHEMA_VERSION,
   SESSION_COUNT,
   type DrawSession,
@@ -28,6 +30,8 @@ export function createInitialState(): LuckyDrawState {
       maxParticipantsPerSession: DEFAULT_MAX_PARTICIPANTS,
       // update.md: global unique winner wajib aktif.
       globalUniqueWinners: true,
+      spinDurationMs: DEFAULT_SPIN_DURATION_MS,
+      spinRevolutions: DEFAULT_SPIN_REVOLUTIONS,
     },
     updatedAt: new Date().toISOString(),
   };

@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { CheckCircle2, Circle, ListChecks } from "lucide-react";
 import type { DrawSession } from "../../domain/types";
 
@@ -31,27 +32,31 @@ export function SessionNavigation({
           session.status === "completed" ? CheckCircle2 : session.status === "ready" ? ListChecks : Circle;
 
         const base =
-          "flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-center transition-colors";
+          "flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-center [transform-style:preserve-3d]";
         const state =
           session.status === "completed"
-            ? "border-emerald-600/60 bg-emerald-950/40 text-emerald-200"
+            ? "border-emerald-600/60 bg-gradient-to-b from-[#123326] to-[#0f1f18] text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
             : session.status === "ready"
-              ? "border-amber-500/60 bg-amber-950/30 text-amber-200"
-              : "border-line bg-surface text-muted";
+              ? "border-amber-500/60 bg-gradient-to-b from-[#3a2c0c] to-[#26221a] text-amber-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              : "border-line bg-gradient-to-b from-[#2c2c31] to-[#202023] text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]";
         const active = isActive
           ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
           : "";
 
         return (
-          <button
+          <motion.button
             key={session.id}
+            whileHover={{ y: -3, rotateX: 7 }}
+            whileTap={{ y: 1 }}
+            transition={{ type: "spring", stiffness: 320, damping: 22 }}
+            style={{ transformPerspective: 600 }}
             type="button"
             onClick={() => onSelect(session.id)}
             aria-current={isActive ? "true" : undefined}
             title={`Sesi ${session.id} — ${STATUS_LABEL[session.status]}${
               session.winner ? ` — Pemenang: ${session.winner.name}` : ""
             }`}
-            className={`${base} ${state} ${active} hover:brightness-110`}
+            className={`${base} ${state} ${active}`}
           >
             <span className="text-sm font-black">SESI {session.id}</span>
             <span className="flex items-center gap-1 text-[11px] font-semibold leading-tight">
@@ -60,7 +65,7 @@ export function SessionNavigation({
                 ? session.winner?.name
                 : `${session.participants.length} peserta`}
             </span>
-          </button>
+          </motion.button>
         );
       })}
     </nav>

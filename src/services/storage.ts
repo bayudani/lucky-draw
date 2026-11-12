@@ -1,4 +1,10 @@
 import {
+  DEFAULT_SPIN_DURATION_MS,
+  DEFAULT_SPIN_REVOLUTIONS,
+  MAX_SPIN_DURATION_MS,
+  MAX_SPIN_REVOLUTIONS,
+  MIN_SPIN_DURATION_MS,
+  MIN_SPIN_REVOLUTIONS,
   SCHEMA_VERSION,
   SESSION_COUNT,
   type DrawHistory,
@@ -134,13 +140,42 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
   }
   if (typeof globalUniqueWinners !== "boolean") return null;
 
+  // Field pengaturan spin bersifat opsional agar backup lama tetap valid;
+  // bila ada nilainya wajib berada dalam rentang wajar.
+  let spinDurationMs = DEFAULT_SPIN_DURATION_MS;
+  if (raw.settings.spinDurationMs !== undefined) {
+    const value = raw.settings.spinDurationMs;
+    if (
+      typeof value !== "number" ||
+      !Number.isInteger(value) ||
+      value < MIN_SPIN_DURATION_MS ||
+      value > MAX_SPIN_DURATION_MS
+    ) {
+      return null;
+    }
+    spinDurationMs = value;
+  }
+  let spinRevolutions = DEFAULT_SPIN_REVOLUTIONS;
+  if (raw.settings.spinRevolutions !== undefined) {
+    const value = raw.settings.spinRevolutions;
+    if (
+      typeof value !== "number" ||
+      !Number.isInteger(value) ||
+      value < MIN_SPIN_REVOLUTIONS ||
+      value > MAX_SPIN_REVOLUTIONS
+    ) {
+      return null;
+    }
+    spinRevolutions = value;
+  }
+
   if (!isIsoDateString(raw.updatedAt)) return null;
 
   return {
     schemaVersion: SCHEMA_VERSION,
     eventName: raw.eventName,
     sessions,
-    settings: { maxParticipantsPerSession, globalUniqueWinners },
+    settings: { maxParticipantsPerSession, globalUniqueWinners, spinDurationMs, spinRevolutions },
     updatedAt: raw.updatedAt,
   };
 }

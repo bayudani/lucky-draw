@@ -1,12 +1,15 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { TriangleAlert } from "lucide-react";
 import { AppHeader } from "../components/layout/AppHeader";
 import { SessionNavigation } from "../components/layout/SessionNavigation";
 import { ParticipantGrid } from "../components/participants/ParticipantGrid";
 import { ParticipantInputDialog } from "../components/participants/ParticipantInputDialog";
 import { SpinPanel } from "../components/draw/SpinPanel";
+import { AudienceView } from "../components/draw/AudienceView";
 import { WinnerHistory } from "../components/history/WinnerHistory";
 import { ConfirmDialog } from "../components/common/ConfirmDialog";
+import { SettingsModal } from "../components/common/SettingsModal";
 import { useLuckyDraw } from "../hooks/useLuckyDraw";
 import { ToastProvider, useToast } from "./providers";
 import {
@@ -35,6 +38,7 @@ function LuckyDrawApp() {
     loadStatus,
     isSpinning,
     spinningSessionId,
+    pendingDraw,
     spin,
     setParticipants,
     resetSession,
@@ -48,7 +52,18 @@ function LuckyDrawApp() {
   const [activeSessionId, setActiveSessionId] = useState(1);
   const [editorOpen, setEditorOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [audienceMode, setAudienceMode] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmKind>(null);
+
+  // ESC di fullscreen menutup fullscreenElement → otomatis keluar mode audiens.
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) setAudienceMode(false);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? sessions[0],
@@ -145,7 +160,25 @@ function LuckyDrawApp() {
   }, [confirmState, sessions, resetSession, resetAll, importState, notify]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col bg-background">
+      {/* Ambient lighting: glow merah atas/bawah, grid halus, noise film */}
+      <div className="pointer-events-none fixed inset-0" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(1100px_520px_at_50%_-8%,rgba(220,38,38,0.16),transparent_62%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(900px_420px_at_50%_112%,rgba(153,27,27,0.14),transparent_60%)]" />
+        <div
+          className="absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+            maskImage: "radial-gradient(ellipse at 50% 40%, black 30%, transparent 78%)",
+            WebkitMaskImage: "radial-gradient(ellipse at 50% 40%, black 30%, transparent 78%)",
+          }}
+        />
+        <div className="bg-noise absolute inset-0 opacity-[0.045] mix-blend-overlay" />
+      </div>
+
+      <div className="relative z-10 flex min-h-screen flex-col">
       {loadStatus === "corrupt" && (
         <div className="flex flex-wrap items-center gap-3 border-b border-primary/60 bg-deep/60 px-6 py-3 text-sm">
           <TriangleAlert className="size-5 shrink-0 text-red-300" aria-hidden />
@@ -169,8 +202,8 @@ function LuckyDrawApp() {
       <AppHeader
         eventName={state.eventName}
         completedCount={completedCount}
-        maxParticipants={state.settings.maxParticipantsPerSession}
-        onMaxParticipantsChange={(value) => updateSettings({ maxParticipantsPerSession: value })}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAudience={() => setAudienceMode(true)}
         onExportJson={() => {
           exportJsonBackup(state);
           notify("Backup JSON diunduh.", "success");
@@ -203,6 +236,7 @@ function LuckyDrawApp() {
           state={state}
           isSpinning={isSpinning}
           isThisSessionSpinning={isSpinning && spinningSessionId === session.id}
+          pendingDraw={pendingDraw}
           showWinner={session.status === "completed"}
           hasNextSession={Boolean(nextDrawable)}
           onSpin={handleSpin}
@@ -210,6 +244,7 @@ function LuckyDrawApp() {
             if (nextDrawable) setActiveSessionId(nextDrawable.id);
           }}
           onOpenHistory={() => setHistoryOpen(true)}
+          onOpenAudience={() => setAudienceMode(true)}
           onResetSession={() => setConfirmState({ type: "reset-session", sessionId: session.id })}
         />
       </main>
@@ -236,6 +271,30 @@ function LuckyDrawApp() {
         }}
       />
 
+      <SettingsModal
+        open={settingsOpen}
+        settings={state.settings}
+        onChange={updateSettings}
+        onClose={() => setSettingsOpen(false)}
+      />
+
+      <AnimatePresence>
+        {audienceMode && (
+          <AudienceView
+            session={session}
+            state={state}
+            isSpinning={isSpinning}
+            pendingDraw={pendingDraw}
+            hasNextSession={Boolean(nextDrawable)}
+            onSpin={handleSpin}
+            onNextSession={() => {
+              if (nextDrawable) setActiveSessionId(nextDrawable.id);
+            }}
+            onExit={() => setAudienceMode(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <WinnerHistory
         open={historyOpen}
         sessions={sessions}
@@ -253,6 +312,7 @@ function LuckyDrawApp() {
           onCancel={() => setConfirmState(null)}
         />
       )}
+      </div>
     </div>
   );
 }

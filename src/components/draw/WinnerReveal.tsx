@@ -1,5 +1,10 @@
-import { useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useMemo, type PointerEvent } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+} from "framer-motion";
 import { PartyPopper } from "lucide-react";
 import type { DrawSession } from "../../domain/types";
 
@@ -9,21 +14,26 @@ interface WinnerRevealProps {
   onNextSession: () => void;
   onOpenHistory: () => void;
   hasNextSession: boolean;
+  /** Mode layar audiens: ukuran lebih besar. */
+  stage?: boolean;
 }
 
-const CONFETTI_COLORS = ["#DC2626", "#991B1B", "#F59E0B", "#FBBF24", "#FAFAFA"];
+const CONFETTI_COLORS = ["#DC2626", "#991B1B", "#F59E0B", "#FBBF24", "#FAFAFA", "#EF4444"];
 
 function ConfettiBurst() {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 44 }, (_, index) => ({
+      Array.from({ length: 52 }, (_, index) => ({
         id: index,
-        x: (Math.random() - 0.5) * 420,
-        y: -(80 + Math.random() * 240),
-        rotate: Math.random() * 540 - 270,
-        delay: Math.random() * 0.25,
+        x: (Math.random() - 0.5) * 460,
+        fall: 120 + Math.random() * 220,
+        rotX: 360 + Math.random() * 720,
+        rotZ: Math.random() * 360,
+        delay: Math.random() * 0.3,
+        duration: 1.7 + Math.random() * 0.8,
         color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
-        size: 6 + Math.random() * 7,
+        w: 7 + Math.random() * 8,
+        h: 12 + Math.random() * 14,
       })),
     [],
   );
@@ -33,70 +43,143 @@ function ConfettiBurst() {
       {pieces.map((piece) => (
         <motion.span
           key={piece.id}
-          initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-          animate={{ x: piece.x, y: piece.y + 160, opacity: 0, rotate: piece.rotate }}
-          transition={{ duration: 1.6 + Math.random() * 0.6, delay: piece.delay, ease: "easeOut" }}
+          initial={{ x: 0, y: 20, opacity: 0, rotateX: 0, rotateZ: piece.rotZ }}
+          animate={{
+            x: piece.x,
+            y: piece.fall,
+            opacity: [0, 1, 1, 0],
+            rotateX: piece.rotX,
+            rotateZ: piece.rotZ + 180,
+          }}
+          transition={{ duration: piece.duration, delay: piece.delay, ease: "easeOut" }}
           className="absolute rounded-[2px]"
-          style={{ backgroundColor: piece.color, width: piece.size, height: piece.size * 1.6 }}
+          style={{
+            backgroundColor: piece.color,
+            width: piece.w,
+            height: piece.h,
+            transformStyle: "preserve-3d",
+            boxShadow: "inset 0 -2px 3px rgba(0,0,0,0.35)",
+          }}
         />
       ))}
     </div>
   );
 }
 
+/** Kartu pemenang 3D: flip masuk + tilt mengikuti pointer (efek holografik). */
 export function WinnerReveal({
   session,
   visible,
   onNextSession,
   onOpenHistory,
   hasNextSession,
+  stage = false,
 }: WinnerRevealProps) {
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const springX = useSpring(rotateX, { stiffness: 160, damping: 18 });
+  const springY = useSpring(rotateY, { stiffness: 160, damping: 18 });
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width - 0.5;
+    const py = (event.clientY - rect.top) / rect.height - 0.5;
+    rotateY.set(px * 12);
+    rotateX.set(-py * 10);
+  };
+
+  const handlePointerLeave = () => {
+    rotateX.set(0);
+    rotateY.set(0);
+  };
+
   return (
     <AnimatePresence>
       {visible && session.winner && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94 }}
-          transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          className="relative overflow-hidden rounded-2xl border border-primary bg-gradient-to-b from-deep/70 to-surface px-6 py-6 text-center shadow-xl shadow-primary/20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="relative [perspective:1200px]"
+          onPointerMove={handlePointerMove}
+          onPointerLeave={handlePointerLeave}
         >
-          <ConfettiBurst />
-          <div className="relative">
-            <p className="flex items-center justify-center gap-2 text-xs font-black uppercase tracking-[0.25em] text-red-300">
-              <PartyPopper className="size-4" aria-hidden />
-              SELAMAT KEPADA PEMENANG!
-            </p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted">
-              Pemenang Sesi {session.id}
-            </p>
-            <h3 className="mt-3 break-words text-4xl font-black leading-tight text-ink xl:text-5xl">
-              {session.winner.name}
-            </h3>
-            {session.drawnAt && (
-              <p className="mt-2 text-xs font-semibold text-muted">
-                Diundi pada {new Date(session.drawnAt).toLocaleString("id-ID")}
-              </p>
-            )}
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              {hasNextSession && (
-                <button
-                  type="button"
-                  onClick={onNextSession}
-                  className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/40 transition-colors hover:bg-deep"
+          <motion.div
+            style={{ rotateX: springX, rotateY: springY, transformStyle: "preserve-3d" }}
+          >
+            <motion.div
+              initial={{ rotateX: -72, y: 70, opacity: 0 }}
+              animate={{ rotateX: 0, y: 0, opacity: 1 }}
+              exit={{ rotateX: -40, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 150, damping: 17 }}
+              className={`relative overflow-hidden rounded-2xl border border-red-400/40 bg-[linear-gradient(160deg,#7f1d1d_0%,#991b1b_35%,#27272a_100%)] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-18px_40px_rgba(0,0,0,0.45),0_24px_60px_-18px_rgba(220,38,38,0.5)] ${
+                stage ? "w-full max-w-4xl px-10 py-12" : "px-6 py-6"
+              }`}
+            >
+              {/* kilau strip melintas */}
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -left-1/2 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/12 to-transparent"
+                animate={{ left: ["-50%", "130%"] }}
+                transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 2.6, ease: "easeInOut" }}
+              />
+              <ConfettiBurst />
+
+              <div className="relative" style={{ transform: "translateZ(40px)" }}>
+                <p
+                  className={`flex items-center justify-center gap-2 font-black uppercase tracking-[0.3em] text-red-200/90 ${
+                    stage ? "text-base" : "text-xs"
+                  }`}
                 >
-                  Lanjut ke Sesi Berikutnya
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onOpenHistory}
-                className="rounded-xl border border-line bg-background px-6 py-3 text-sm font-bold text-ink transition-colors hover:bg-elevated"
-              >
-                Lihat Rekap
-              </button>
-            </div>
-          </div>
+                  <PartyPopper className={stage ? "size-6" : "size-4"} aria-hidden />
+                  SELAMAT KEPADA PEMENANG!
+                </p>
+                <p
+                  className={`mt-1 font-bold uppercase tracking-[0.25em] text-muted ${
+                    stage ? "text-sm" : "text-[11px]"
+                  }`}
+                >
+                  Pemenang Sesi {session.id}
+                </p>
+                <h3
+                  className={`mt-3 break-words font-black leading-tight ${
+                    stage ? "text-6xl xl:text-7xl" : "text-4xl xl:text-5xl"
+                  }`}
+                >
+                  <span className="bg-gradient-to-b from-white via-red-50 to-red-300 bg-clip-text text-transparent drop-shadow-[0_2px_18px_rgba(220,38,38,0.45)]">
+                    {session.winner.name}
+                  </span>
+                </h3>
+                {session.drawnAt && (
+                  <p className={`mt-2 font-semibold text-muted ${stage ? "text-sm" : "text-xs"}`}>
+                    Diundi pada {new Date(session.drawnAt).toLocaleString("id-ID")}
+                  </p>
+                )}
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                  {hasNextSession && (
+                    <motion.button
+                      whileHover={{ y: -2 }}
+                      whileTap={{ y: 3 }}
+                      type="button"
+                      onClick={onNextSession}
+                      className="relative rounded-xl border border-red-300/30 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-6 py-3 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.3)]"
+                    >
+                      Lanjut ke Sesi Berikutnya
+                    </motion.button>
+                  )}
+                  <motion.button
+                    whileHover={{ y: -2 }}
+                    whileTap={{ y: 3 }}
+                    type="button"
+                    onClick={onOpenHistory}
+                    className="relative rounded-xl border border-line bg-gradient-to-b from-[#3f3f46] to-[#27272a] px-6 py-3 text-sm font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-3px_0_rgba(0,0,0,0.35)]"
+                  >
+                    Lihat Rekap
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

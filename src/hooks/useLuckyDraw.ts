@@ -15,8 +15,33 @@ import type {
 } from "../domain/types";
 import { clearState, loadState, saveState, type LoadResult } from "../services/storage";
 
-/** Durasi animasi spin (ms). Pemenang sudah dipilih sejak tombol ditekan. */
-export const SPIN_DURATION_MS = 4000;
+// import type {
+//   DrawSession,
+//   LuckyDrawState,
+//   Participant,
+//   Settings,
+// } from "../domain/types";
+import {
+  MAX_SPIN_DURATION_MS,
+  MAX_SPIN_REVOLUTIONS,
+  MIN_SPIN_DURATION_MS,
+  MIN_SPIN_REVOLUTIONS,
+} from "../domain/types";
+// import { clearState, loadState, saveState, type LoadResult } from "../services/storage";
+
+/**
+ * Data undian yang sedang berjalan: dipakai animasi 3D untuk mendarat di pemenang.
+ * `durationMs` & `revolutions` diambil dari pengaturan saat tombol ditekan.
+ */
+export interface PendingDraw {
+  sessionId: number;
+  /** Nama-nama kandidat (hanya eligible), urutan tetap. */
+  names: string[];
+  /** Indeks pemenang pada `names`. */
+  winnerIndex: number;
+  durationMs: number;
+  revolutions: number;
+}
 
 type Action =
   | { type: "SET_PARTICIPANTS"; sessionId: number; names: string[] }
@@ -124,6 +149,8 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
 
     case "UPDATE_SETTINGS": {
       const nextMax = action.settings.maxParticipantsPerSession;
+      const nextDuration = action.settings.spinDurationMs;
+      const nextRevolutions = action.settings.spinRevolutions;
       return {
         ...state,
         settings: {
@@ -133,6 +160,14 @@ export function reducer(state: LuckyDrawState, action: Action): LuckyDrawState {
             nextMax !== undefined
               ? Math.min(1000, Math.max(1, Math.round(nextMax)))
               : state.settings.maxParticipantsPerSession,
+          spinDurationMs:
+            nextDuration !== undefined
+              ? Math.min(MAX_SPIN_DURATION_MS, Math.max(MIN_SPIN_DURATION_MS, Math.round(nextDuration)))
+              : state.settings.spinDurationMs,
+          spinRevolutions:
+            nextRevolutions !== undefined
+              ? Math.min(MAX_SPIN_REVOLUTIONS, Math.max(MIN_SPIN_REVOLUTIONS, Math.round(nextRevolutions)))
+              : state.settings.spinRevolutions,
         },
         updatedAt: new Date().toISOString(),
       };
@@ -157,6 +192,7 @@ export function useLuckyDraw() {
   const [state, dispatch] = useReducer(reducer, init.state);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningSessionId, setSpinningSessionId] = useState<number | null>(null);
+  const [pendingDraw, setPendingDraw] = useState<PendingDraw | null>(null);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -224,6 +260,21 @@ export function useLuckyDraw() {
       spinningRef.current = true;
       setIsSpinning(true);
       setSpinningSessionId(sessionId);
+      const durationMs = Math.min(
+        MAX_SPIN_DURATION_MS,
+        Math.max(MIN_SPIN_DURATION_MS, current.settings.spinDurationMs),
+      );
+      const revolutions = Math.min(
+        MAX_SPIN_REVOLUTIONS,
+        Math.max(MIN_SPIN_REVOLUTIONS, current.settings.spinRevolutions),
+      );
+      setPendingDraw({
+        sessionId,
+        names: eligible.map((participant) => participant.name),
+        winnerIndex,
+        durationMs,
+        revolutions,
+      });
 
       timerRef.current = window.setTimeout(() => {
         dispatch({
@@ -234,9 +285,10 @@ export function useLuckyDraw() {
         });
         setIsSpinning(false);
         setSpinningSessionId(null);
+        setPendingDraw(null);
         spinningRef.current = false;
         timerRef.current = null;
-      }, SPIN_DURATION_MS);
+      }, durationMs);
 
       return true;
     },
@@ -256,6 +308,7 @@ export function useLuckyDraw() {
     loadStatus: init.loadStatus,
     isSpinning,
     spinningSessionId,
+    pendingDraw,
     spin,
     setParticipants,
     resetSession,

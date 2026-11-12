@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Pencil, Users } from "lucide-react";
 import type { DrawSession } from "../../domain/types";
 
@@ -21,7 +22,7 @@ export function ParticipantGrid({
 
   return (
     <section
-      className="flex min-h-0 flex-col rounded-2xl border border-line bg-surface"
+      className="flex min-h-0 flex-col rounded-2xl border border-line bg-gradient-to-b from-[#2e2e33] to-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_20px_50px_-30px_rgba(0,0,0,0.8)]"
       aria-label="Daftar peserta"
     >
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line px-6 py-4">
@@ -32,30 +33,34 @@ export function ParticipantGrid({
           </p>
         </div>
         {canEdit && (
-          <button
+          <motion.button
+            whileHover={{ y: -2 }}
+            whileTap={{ y: 2 }}
             type="button"
             onClick={onOpenEditor}
-            className="flex items-center gap-2 rounded-xl border border-line bg-background px-4 py-2 text-sm font-bold text-ink transition-colors hover:bg-elevated"
+            className="relative flex items-center gap-2 rounded-xl border border-line bg-gradient-to-b from-[#3f3f46] to-[#27272a] px-4 py-2 text-sm font-bold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-3px_0_rgba(0,0,0,0.35)]"
           >
             <Pencil className="size-4" aria-hidden />
             {isEmpty ? "Tambah Peserta" : "Edit Peserta"}
-          </button>
+          </motion.button>
         )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
         {isEmpty ? (
           <div className="flex h-full min-h-40 flex-col items-center justify-center gap-3 text-center">
-            <Users className="size-10 text-muted/60" aria-hidden />
+            <Users className="size-10 text-muted/50" aria-hidden />
             <p className="font-semibold text-muted">Belum ada peserta di sesi ini</p>
             {canEdit && (
-              <button
+              <motion.button
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 3 }}
                 type="button"
                 onClick={onOpenEditor}
-                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-primary/30 transition-colors hover:bg-deep"
+                className="relative rounded-xl border border-red-300/30 bg-gradient-to-b from-[#ef4444] to-[#b91c1c] px-5 py-2.5 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-3px_0_rgba(0,0,0,0.3)]"
               >
                 Tambah Peserta
-              </button>
+              </motion.button>
             )}
           </div>
         ) : (
@@ -65,12 +70,15 @@ export function ParticipantGrid({
                 globalUniqueWinners &&
                 previousWinnerNames.includes(participant.name.toLowerCase());
               return (
-                <li
+                <motion.li
                   key={participant.id}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold ${
+                  initial={{ opacity: 0, y: 10, rotateX: -18 }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.035, 0.9) }}
+                  className={`relative flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-6px_10px_rgba(0,0,0,0.25)] ${
                     alreadyWon
-                      ? "border-amber-500/50 bg-amber-950/25 text-amber-100"
-                      : "border-line bg-background text-ink"
+                      ? "border-amber-500/50 bg-gradient-to-b from-[#453411] to-[#292524] text-amber-100"
+                      : "border-line bg-gradient-to-b from-[#333338] to-[#232326] text-ink"
                   }`}
                 >
                   <span className="w-6 shrink-0 text-right text-xs font-bold text-muted">
@@ -80,11 +88,11 @@ export function ParticipantGrid({
                     {participant.name}
                   </span>
                   {alreadyWon && (
-                    <span className="ml-auto shrink-0 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-300">
+                    <span className="ml-auto shrink-0 rounded-md border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-300">
                       Sudah Menang
                     </span>
                   )}
-                </li>
+                </motion.li>
               );
             })}
           </ul>

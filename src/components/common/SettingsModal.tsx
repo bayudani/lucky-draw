@@ -1,0 +1,119 @@
+import { Gauge, Timer, Users } from "lucide-react";
+import {
+  MAX_SPIN_DURATION_MS,
+  MAX_SPIN_REVOLUTIONS,
+  MIN_SPIN_DURATION_MS,
+  MIN_SPIN_REVOLUTIONS,
+  type Settings,
+} from "../../domain/types";
+import { Modal } from "./Modal";
+
+interface SettingsModalProps {
+  open: boolean;
+  settings: Settings;
+  onChange: (settings: Partial<Settings>) => void;
+  onClose: () => void;
+}
+
+const inputClass =
+  "w-24 rounded-lg border border-line bg-background px-2 py-1.5 text-center text-sm font-bold text-ink outline-none focus:border-primary";
+
+export function SettingsModal({ open, settings, onChange, onClose }: SettingsModalProps) {
+  return (
+    <Modal open={open} title="Pengaturan Acara" onClose={onClose}>
+      <div className="flex flex-col gap-5">
+        <p className="text-sm text-muted">
+          Perubahan langsung tersimpan otomatis di perangkat ini.
+        </p>
+
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
+          <span className="flex items-center gap-3">
+            <Users className="size-5 text-muted" aria-hidden />
+            <span>
+              <span className="block text-sm font-bold text-ink">Maksimal peserta per sesi</span>
+              <span className="block text-xs text-muted">Default 30 (BR-03)</span>
+            </span>
+          </span>
+          <input
+            type="number"
+            min={1}
+            max={1000}
+            value={settings.maxParticipantsPerSession}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              if (Number.isFinite(value) && value >= 1) {
+                onChange({ maxParticipantsPerSession: value });
+              }
+            }}
+            className={inputClass}
+            aria-label="Maksimal peserta per sesi"
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
+          <span className="flex items-center gap-3">
+            <Timer className="size-5 text-muted" aria-hidden />
+            <span>
+              <span className="block text-sm font-bold text-ink">Durasi pengundian</span>
+              <span className="block text-xs text-muted">
+                Lama drum berputar ({MIN_SPIN_DURATION_MS / 1000}–{MAX_SPIN_DURATION_MS / 1000} detik)
+              </span>
+            </span>
+          </span>
+          <span className="flex items-center gap-2">
+            <input
+              type="number"
+              min={MIN_SPIN_DURATION_MS / 1000}
+              max={MAX_SPIN_DURATION_MS / 1000}
+              step={0.5}
+              value={settings.spinDurationMs / 1000}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (Number.isFinite(value) && value >= MIN_SPIN_DURATION_MS / 1000) {
+                  onChange({ spinDurationMs: Math.round(value * 1000) });
+                }
+              }}
+              className={inputClass}
+              aria-label="Durasi pengundian dalam detik"
+            />
+            <span className="text-sm font-bold text-muted">detik</span>
+          </span>
+        </label>
+
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
+          <span className="flex items-center gap-3">
+            <Gauge className="size-5 text-muted" aria-hidden />
+            <span>
+              <span className="block text-sm font-bold text-ink">Kecepatan drum</span>
+              <span className="block text-xs text-muted">
+                Jumlah putaran penuh selama durasi ({MIN_SPIN_REVOLUTIONS}–{MAX_SPIN_REVOLUTIONS})
+              </span>
+            </span>
+          </span>
+          <input
+            type="number"
+            min={MIN_SPIN_REVOLUTIONS}
+            max={MAX_SPIN_REVOLUTIONS}
+            value={settings.spinRevolutions}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              if (Number.isFinite(value) && value >= MIN_SPIN_REVOLUTIONS) {
+                onChange({ spinRevolutions: Math.round(value) });
+              }
+            }}
+            className={inputClass}
+            aria-label="Kecepatan drum dalam putaran"
+          />
+        </label>
+
+        <div className="rounded-xl border border-primary/50 bg-deep/30 px-4 py-3 text-sm">
+          <p className="font-bold text-red-200">Pemenang unik sepanjang acara: AKTIF (wajib)</p>
+          <p className="mt-1 text-red-100/80">
+            Peserta yang sudah pernah menang tidak dapat terpilih lagi di sesi mana pun,
+            sesuai requirement terbaru.
+          </p>
+        </div>
+      </div>
+    </Modal>
+  );
+}

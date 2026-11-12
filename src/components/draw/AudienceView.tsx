@@ -80,7 +80,7 @@ export function AudienceView({
         session.winners.length > 0
           ? session.winners.slice(0, 2).map((w) => w.name).join(", ") +
             (session.winners.length > 2 ? ` +${session.winners.length - 2} lagi` : "")
-          : "—"
+          : "belum ada"
       }`
     : session.status === "ready"
       ? "Semua siap? Saatnya menentukan pemenang!"

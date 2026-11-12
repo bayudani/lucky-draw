@@ -105,7 +105,7 @@ export function WinnerHistory({ open, sessions, onClose }: WinnerHistoryProps) {
                             {entry.participants.length} peserta saat pengundian:
                           </p>
                           <p className="mt-0.5 text-xs leading-relaxed text-muted/90">
-                            {entry.participants.map((p) => p.name).join(", ") || "—"}
+                            {entry.participants.map((p) => p.name).join(", ") || "tidak ada"}
                           </p>
                         </li>
                       ))}

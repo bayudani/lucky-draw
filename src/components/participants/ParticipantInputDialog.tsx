@@ -119,7 +119,7 @@ export function ParticipantInputDialog({
           <div className="rounded-xl border border-amber-500/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">
             <p className="font-bold">Sudah pernah menang di sesi lain:</p>
             <p className="mt-1 text-amber-200/90">
-              {alreadyWonInBatch.join(", ")} — tetap bisa disimpan dan ditandai
+              {alreadyWonInBatch.join(", ")}. Tetap bisa disimpan dan ditandai
               &quot;Sudah Menang&quot;, tetapi tidak bisa terpilih saat pengundian.
             </p>
             <button

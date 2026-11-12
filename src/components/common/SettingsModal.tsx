@@ -186,7 +186,7 @@ export function SettingsModal({
               </span>
               <span className="block text-xs text-muted">
                 Setelah sesi selesai, nama yang belum menang langsung masuk ke sesi
-                berikutnya — tidak perlu input ulang. Tetap bisa diedit/ditambah manual.
+                berikutnya. Tidak perlu input ulang. Tetap bisa diedit/ditambah manual.
               </span>
             </span>
           </span>
@@ -208,7 +208,7 @@ export function SettingsModal({
               <span className="block text-sm font-bold text-ink">Efek suara</span>
               <span className="block text-xs text-muted">
                 Suara mesin saat spin &amp; fanfare saat pemenang keluar. Dibangkitkan
-                langsung, tanpa file — tetap jalan offline.
+                langsung, tanpa file. Tetap jalan offline.
               </span>
             </span>
           </span>

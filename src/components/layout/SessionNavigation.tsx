@@ -55,9 +55,9 @@ export function SessionNavigation({
             type="button"
             onClick={() => onSelect(session.id)}
             aria-current={isActive ? "true" : undefined}
-            title={`${getSessionDisplayName(session)} — ${STATUS_LABEL[session.status]}${
+            title={`${getSessionDisplayName(session)} · ${STATUS_LABEL[session.status]}${
               session.winners.length > 0
-                ? ` — Pemenang: ${session.winners.slice(0, 2).map((w) => w.name).join(", ")}`
+                ? ` · Pemenang: ${session.winners.slice(0, 2).map((w) => w.name).join(", ")}`
                 : ""
             }`}
             className={`${base} ${state} ${active} min-w-[7.5rem] shrink-0 xl:min-w-0`}

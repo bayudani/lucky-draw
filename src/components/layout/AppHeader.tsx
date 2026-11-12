@@ -69,12 +69,12 @@ export function AppHeader({
   };
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-gradient-to-b from-[#232327] to-[#1c1c1f] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:px-6">
-      <div className="flex items-center gap-3 sm:gap-4">
+    <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line bg-gradient-to-b from-[#232327] to-[#1c1c1f] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:px-6 sm:py-3">
+      <div className="flex items-center gap-2 sm:gap-4">
         <motion.div
           whileHover={{ rotateY: 14, rotateX: -8 }}
           style={{ transformPerspective: 400 }}
-          className="flex size-11 items-center justify-center rounded-xl border border-red-300/40 bg-white p-1.5 shadow-[inset_0_2px_0_rgba(255,255,255,0.45),inset_0_-4px_8px_rgba(0,0,0,0.4)]"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-red-300/40 bg-white p-1 shadow-[inset_0_2px_0_rgba(255,255,255,0.45),inset_0_-4px_8px_rgba(0,0,0,0.4)] sm:size-11 sm:rounded-xl sm:p-1.5"
         >
           <img
             src="/img/LogoBenline.png"
@@ -84,14 +84,14 @@ export function AppHeader({
           />
         </motion.div>
         <div>
-          <h1 className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-xl font-black leading-tight tracking-tight text-transparent">
+          <h1 className="bg-gradient-to-b from-white to-red-200 bg-clip-text text-base font-black leading-tight tracking-tight text-transparent sm:text-xl">
             {eventName}
           </h1>
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-muted">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted sm:text-[11px] sm:tracking-[0.3em]">
             {sessionCount} Sesi Pengundian
           </p>
         </div>
-        <span className="rounded-full border border-primary/50 bg-gradient-to-b from-[#3d1414] to-[#251010] px-3 py-1 text-xs font-bold text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+        <span className="hidden rounded-full border border-primary/50 bg-gradient-to-b from-[#3d1414] to-[#251010] px-3 py-1 text-xs font-bold text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:inline-block">
           {completedCount}/{sessionCount} sesi selesai
         </span>
       </div>

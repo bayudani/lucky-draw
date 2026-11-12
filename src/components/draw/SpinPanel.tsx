@@ -79,7 +79,7 @@ export function SpinPanel({
         session.winners.length > 0
           ? session.winners.slice(0, 2).map((w) => w.name).join(", ") +
             (session.winners.length > 2 ? ` +${session.winners.length - 2} lagi` : "")
-          : "—"
+          : "belum ada"
       }`
     : session.status === "ready"
       ? "Semua siap? Saatnya menentukan pemenang!"
@@ -150,8 +150,8 @@ export function SpinPanel({
           </div>
           {eligible.length > 0 && session.winnerCount > eligible.length && (
             <p className="w-full text-right text-[11px] font-bold text-red-300">
-              Jumlah pemenang ({session.winnerCount}) melebihi nama tersedia ({eligible.length}) —
-              tambah peserta atau kurangi jumlah pemenang
+              Jumlah pemenang ({session.winnerCount}) melebihi nama tersedia ({eligible.length}). Tambah
+              peserta atau kurangi jumlah pemenang
             </p>
           )}
           <button

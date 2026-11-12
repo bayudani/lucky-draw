@@ -23,7 +23,7 @@ export function createInitialState(): LuckyDrawState {
   return {
     schemaVersion: 1,
     // Jangan mengarang nama acara (AGENTS.md) — label generik.
-    eventName: "Lucky Draw",
+    eventName: "Benline",
     sessions: createEmptySessions(),
     settings: {
       maxParticipantsPerSession: 30,

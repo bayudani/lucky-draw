@@ -228,9 +228,13 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
 
   if (!isIsoDateString(raw.updatedAt)) return null;
 
+  // Rebranding: nama acara default lama ("Lucky Draw") otomatis jadi "Benline".
+  // Nama lain yang sengaja diisi panitia tetap dipertahankan.
+  const eventName = raw.eventName === "Lucky Draw" ? "Benline" : raw.eventName;
+
   return {
     schemaVersion: SCHEMA_VERSION,
-    eventName: raw.eventName,
+    eventName,
     sessions,
     settings: {
       maxParticipantsPerSession,

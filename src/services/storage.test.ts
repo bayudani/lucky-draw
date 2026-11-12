@@ -122,6 +122,20 @@ describe("validateLuckyDrawState", () => {
     expect(result?.sessions[0].status).toBe("completed");
   });
 
+  it("memigrasi nama acara default lama 'Lucky Draw' menjadi 'Benline'", () => {
+    const state = createInitialState();
+    state.eventName = "Lucky Draw";
+    const result = validateLuckyDrawState(JSON.parse(JSON.stringify(state)));
+    expect(result?.eventName).toBe("Benline");
+  });
+
+  it("mempertahankan nama acara kustom panitia", () => {
+    const state = createInitialState();
+    state.eventName = "Acara Spesial Panitia";
+    const result = validateLuckyDrawState(JSON.parse(JSON.stringify(state)));
+    expect(result?.eventName).toBe("Acara Spesial Panitia");
+  });
+
   it("menolak settings tidak valid", () => {
     const state = createInitialState();
     state.settings.maxParticipantsPerSession = 0;

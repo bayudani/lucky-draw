@@ -161,8 +161,7 @@ export function SettingsModal({ open, settings, onChange, onClose }: SettingsMod
         <div className="rounded-xl border border-primary/50 bg-deep/30 px-4 py-3 text-sm">
           <p className="font-bold text-red-200">Pemenang unik sepanjang acara: AKTIF (wajib)</p>
           <p className="mt-1 text-red-100/80">
-            Peserta yang sudah pernah menang tidak dapat terpilih lagi di sesi mana pun,
-            sesuai requirement terbaru.
+            Peserta yang sudah pernah menang tidak dapat terpilih lagi di sesi mana pun.
           </p>
           <p className="mt-3 border-t border-primary/30 pt-2 text-xs text-muted">
             Catatan: mengurangi jumlah sesi akan menghapus sesi dari urutan terakhir

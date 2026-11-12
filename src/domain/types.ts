@@ -39,6 +39,8 @@ export interface Settings {
   spinDurationMs: number; // 1000..15000
   /** Jumlah putaran penuh drum selama durasi — menentukan kecepatan. */
   spinRevolutions: number; // 2..20
+  /** Efek suara saat spin & pemenang (Web Audio, tanpa file asset). */
+  soundEnabled: boolean;
 }
 
 export const DEFAULT_MAX_PARTICIPANTS = 30;

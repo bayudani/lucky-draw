@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Smartphone, TriangleAlert, X } from "lucide-react";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -11,6 +11,7 @@ import { WinnerHistory } from "../components/history/WinnerHistory";
 import { ConfirmDialog } from "../components/common/ConfirmDialog";
 import { SettingsModal } from "../components/common/SettingsModal";
 import { useLuckyDraw } from "../hooks/useLuckyDraw";
+import { playWinSound, setSoundEnabled, startSpinSound, stopSpinSound } from "../services/sound";
 import { ToastProvider, useToast } from "./providers";
 import {
   ImportValidationError,
@@ -70,6 +71,26 @@ function LuckyDrawApp() {
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
+
+  // Sinkronkan toggle efek suara ke modul sound.
+  useEffect(() => {
+    setSoundEnabled(state.settings.soundEnabled);
+  }, [state.settings.soundEnabled]);
+
+  // Suara spin: whoosh+gemuruh saat mulai, fanfare saat selesai (termasuk Stop manual).
+  const wasSpinning = useRef(false);
+  useEffect(() => {
+    if (isSpinning && !wasSpinning.current) {
+      startSpinSound();
+    } else if (!isSpinning && wasSpinning.current) {
+      stopSpinSound();
+      playWinSound();
+    }
+    wasSpinning.current = isSpinning;
+  }, [isSpinning]);
+
+  // Bersihkan suara spin bila komponen dibongkar.
+  useEffect(() => () => stopSpinSound(), []);
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? sessions[0],

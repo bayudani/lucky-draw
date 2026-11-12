@@ -145,6 +145,21 @@ describe("validateLuckyDrawState", () => {
     expect(result?.settings.autoCarryOverParticipants).toBe(true);
   });
 
+  it("soundEnabled default true pada backup lama", () => {
+    const state = createInitialState();
+    const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
+    delete (raw.settings as Record<string, unknown>).soundEnabled;
+    const result = validateLuckyDrawState(raw);
+    expect(result?.settings.soundEnabled).toBe(true);
+  });
+
+  it("menolak soundEnabled bukan boolean", () => {
+    const state = createInitialState();
+    const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
+    (raw.settings as Record<string, unknown>).soundEnabled = "yes";
+    expect(validateLuckyDrawState(raw)).toBeNull();
+  });
+
   it("menolak autoCarryOverParticipants bukan boolean", () => {
     const state = createInitialState();
     const raw = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;

@@ -35,6 +35,7 @@ export function createInitialState(): LuckyDrawState {
       autoCarryOverParticipants: true,
       spinDurationMs: 4000,
       spinRevolutions: 6,
+      soundEnabled: true,
     },
     updatedAt: new Date().toISOString(),
   };

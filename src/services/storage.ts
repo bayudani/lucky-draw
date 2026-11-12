@@ -238,6 +238,12 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
     if (typeof raw.settings.autoCarryOverParticipants !== "boolean") return null;
     autoCarryOverParticipants = raw.settings.autoCarryOverParticipants;
   }
+  // Field opsional (backup lama) — default ON.
+  let soundEnabled = true;
+  if (raw.settings.soundEnabled !== undefined) {
+    if (typeof raw.settings.soundEnabled !== "boolean") return null;
+    soundEnabled = raw.settings.soundEnabled;
+  }
 
   if (!isIsoDateString(raw.updatedAt)) return null;
 
@@ -256,6 +262,7 @@ export function validateLuckyDrawState(raw: unknown): LuckyDrawState | null {
       autoCarryOverParticipants,
       spinDurationMs,
       spinRevolutions,
+      soundEnabled,
     },
     updatedAt: raw.updatedAt,
   };

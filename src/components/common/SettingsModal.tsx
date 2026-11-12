@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Gauge, Gift, List, Timer, Users } from "lucide-react";
+import { ArrowRightLeft, Gauge, Gift, List, Timer, Users, Volume2 } from "lucide-react";
 import {
   MAX_SESSION_COUNT,
   MAX_SESSION_NAME_LENGTH,
@@ -198,6 +198,26 @@ export function SettingsModal({
             }
             className="size-5 accent-primary"
             aria-label="Sisa peserta otomatis pindah ke sesi berikutnya"
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-background px-4 py-3">
+          <span className="flex items-center gap-3">
+            <Volume2 className="size-5 text-muted" aria-hidden />
+            <span>
+              <span className="block text-sm font-bold text-ink">Efek suara</span>
+              <span className="block text-xs text-muted">
+                Suara mesin saat spin &amp; fanfare saat pemenang keluar. Dibangkitkan
+                langsung, tanpa file — tetap jalan offline.
+              </span>
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={settings.soundEnabled}
+            onChange={(event) => onChange({ soundEnabled: event.target.checked })}
+            className="size-5 accent-primary"
+            aria-label="Efek suara"
           />
         </label>
 

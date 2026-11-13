@@ -50,7 +50,7 @@ export const DEFAULT_SPIN_DURATION_MS = 4000;
 export const DEFAULT_SPIN_REVOLUTIONS = 6;
 
 export const MIN_SESSION_COUNT = 1;
-export const MAX_SESSION_COUNT = 30;
+export const MAX_SESSION_COUNT = 50;
 export const MIN_WINNER_COUNT = 1;
 export const MAX_WINNER_COUNT = 100;
 

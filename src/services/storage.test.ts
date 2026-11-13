@@ -19,12 +19,12 @@ describe("validateLuckyDrawState", () => {
     expect(validateLuckyDrawState({ schemaVersion: 2 })).toBeNull();
   });
 
-  it("menolak jumlah sesi di luar rentang (0 atau > 30)", () => {
+  it("menolak jumlah sesi di luar rentang (0 atau > 50)", () => {
     const state = createInitialState();
     state.sessions = [];
     expect(validateLuckyDrawState(JSON.parse(JSON.stringify(state)))).toBeNull();
     state.sessions = createInitialState().sessions.concat(
-      Array.from({ length: 21 }, (_, i) => ({
+      Array.from({ length: 41 }, (_, i) => ({
         id: 11 + i,
         name: "",
         participants: [],

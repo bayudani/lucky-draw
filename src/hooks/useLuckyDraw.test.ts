@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../domain/factory";
 import type { LuckyDrawState } from "../domain/types";
+import { MAX_SESSION_COUNT } from "../domain/types";
 import { reducer } from "./useLuckyDraw";
 
 function withParticipants(state: LuckyDrawState, sessionId: number, names: string[]): LuckyDrawState {
@@ -198,10 +199,10 @@ describe("reducer — UPDATE_SETTINGS sessionCount", () => {
     expect(state.sessions[1].participants).toHaveLength(1);
   });
 
-  it("clamp jumlah sesi ke rentang 1..30", () => {
+  it("clamp jumlah sesi ke rentang 1..MAX_SESSION_COUNT", () => {
     let state = createInitialState();
     state = reducer(state, { type: "UPDATE_SETTINGS", settings: { sessionCount: 999 } });
-    expect(state.settings.sessionCount).toBe(30);
+    expect(state.settings.sessionCount).toBe(MAX_SESSION_COUNT);
     state = reducer(state, { type: "UPDATE_SETTINGS", settings: { sessionCount: -5 } });
     expect(state.settings.sessionCount).toBe(1);
   });
